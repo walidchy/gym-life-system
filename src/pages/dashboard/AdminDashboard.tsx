@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, Dumbbell, CreditCard, Wrench, TrendingUp, ChevronRight } from 'lucide-react';
+import { Users, Dumbbell, CreditCard, Wrench, TrendingUp, ChevronRight, Calendar } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   BarChart,
