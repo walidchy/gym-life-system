@@ -24,6 +24,7 @@ const registerSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address' }),
   password: z.string().min(8, { message: 'Password must be at least 8 characters' }),
   password_confirmation: z.string(),
+  role: z.enum(['member', 'trainer', 'admin']).optional().default('member'),
 }).refine((data) => data.password === data.password_confirmation, {
   message: "Passwords don't match",
   path: ["password_confirmation"],
@@ -42,6 +43,7 @@ const Register: React.FC = () => {
       email: '',
       password: '',
       password_confirmation: '',
+      role: 'member',
     },
   });
   
@@ -52,18 +54,18 @@ const Register: React.FC = () => {
         name: data.name,
         email: data.email,
         password: data.password,
-        password_confirmation: data.password_confirmation
+        password_confirmation: data.password_confirmation,
+        role: data.role,
       };
       
       const response = await registerUser(userData);
       
-      // Check if response and token exist before using them
-      if (response && response.token) {
-        localStorage.setItem('auth_token', response.token);
-        localStorage.setItem('user', JSON.stringify(response.user));
-        setUser(response.user);
-        toast.success('Registration successful! Welcome to GymLife.');
-        navigate('/dashboard');
+      if (response && response.user) {
+        toast.success(response.message || 'Registration successful! Your account is pending verification.');
+        
+        // Don't set auth token since user needs verification first
+        // Instead redirect to login page
+        navigate('/login');
       } else {
         console.error('Invalid response format:', response);
         toast.error('Registration failed. Please try again.');

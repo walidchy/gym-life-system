@@ -2,14 +2,14 @@
 import api from './api';
 import { User, LoginCredentials, RegisterData, ApiResponse } from '../types';
 
-export const login = async (credentials: LoginCredentials): Promise<{ user: User; token: string }> => {
-  const response = await api.post<ApiResponse<{ user: User; token: string }>>('/login', credentials);
-  return response.data.data;
+export const login = async (credentials: LoginCredentials): Promise<{ user: User; token: string; message: string }> => {
+  const response = await api.post<{ user: User; token: string; message: string }>('/login', credentials);
+  return response.data;
 };
 
-export const register = async (userData: RegisterData): Promise<{ user: User; token: string }> => {
-  const response = await api.post<ApiResponse<{ user: User; token: string }>>('/register', userData);
-  return response.data.data;
+export const register = async (userData: RegisterData): Promise<{ user: User; message: string }> => {
+  const response = await api.post<{ user: User; message: string }>('/register', userData);
+  return response.data;
 };
 
 export const logout = async (): Promise<void> => {
@@ -19,8 +19,8 @@ export const logout = async (): Promise<void> => {
 };
 
 export const getCurrentUser = async (): Promise<User> => {
-  const response = await api.get<ApiResponse<User>>('/user');
-  return response.data.data;
+  const response = await api.get<User>('/user');
+  return response.data;
 };
 
 export const forgotPassword = async (email: string): Promise<void> => {

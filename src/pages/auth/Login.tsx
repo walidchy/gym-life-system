@@ -53,7 +53,7 @@ const Login: React.FC = () => {
         localStorage.setItem('auth_token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
-        toast.success('Login successful. Welcome back!');
+        toast.success(response.message || 'Login successful. Welcome back!');
         navigate('/dashboard');
       } else {
         console.error('Invalid response format:', response);

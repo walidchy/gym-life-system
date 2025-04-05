@@ -1,4 +1,3 @@
-
 export interface User {
   id: number;
   name: string;
@@ -133,6 +132,7 @@ export interface RegisterData {
   email: string;
   password: string;
   password_confirmation: string;
+  role?: 'member' | 'trainer' | 'admin';
 }
 
 export interface ApiResponse<T> {
