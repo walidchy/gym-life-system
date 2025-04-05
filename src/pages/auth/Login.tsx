@@ -40,7 +40,12 @@ const Login: React.FC = () => {
   
   const onSubmit = async (data: LoginFormValues) => {
     try {
-      const response = await login(data);
+      // Ensure data is explicitly typed as a complete LoginCredentials object
+      const credentials = {
+        email: data.email,
+        password: data.password
+      };
+      const response = await login(credentials);
       localStorage.setItem('auth_token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       setUser(response.user);

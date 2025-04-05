@@ -47,7 +47,14 @@ const Register: React.FC = () => {
   
   const onSubmit = async (data: RegisterFormValues) => {
     try {
-      const response = await registerUser(data);
+      // Ensure data is explicitly typed as a complete RegisterData object
+      const userData = {
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        password_confirmation: data.password_confirmation
+      };
+      const response = await registerUser(userData);
       localStorage.setItem('auth_token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
       setUser(response.user);
