@@ -45,15 +45,24 @@ const Login: React.FC = () => {
         email: data.email,
         password: data.password
       };
+      
       const response = await login(credentials);
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      setUser(response.user);
-      toast.success('Login successful. Welcome back!');
-      navigate('/dashboard');
+      
+      // Check if response and token exist before using them
+      if (response && response.token) {
+        localStorage.setItem('auth_token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        setUser(response.user);
+        toast.success('Login successful. Welcome back!');
+        navigate('/dashboard');
+      } else {
+        console.error('Invalid response format:', response);
+        toast.error('Login failed. Please try again.');
+      }
     } catch (error) {
       console.error('Login error:', error);
-      // Error handling is done by our API interceptor
+      toast.error('Login failed. Please check your credentials and try again.');
+      // Error handling is done by our API interceptor too
     }
   };
 

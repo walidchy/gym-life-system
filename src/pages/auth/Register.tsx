@@ -54,15 +54,24 @@ const Register: React.FC = () => {
         password: data.password,
         password_confirmation: data.password_confirmation
       };
+      
       const response = await registerUser(userData);
-      localStorage.setItem('auth_token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
-      setUser(response.user);
-      toast.success('Registration successful! Welcome to GymLife.');
-      navigate('/dashboard');
+      
+      // Check if response and token exist before using them
+      if (response && response.token) {
+        localStorage.setItem('auth_token', response.token);
+        localStorage.setItem('user', JSON.stringify(response.user));
+        setUser(response.user);
+        toast.success('Registration successful! Welcome to GymLife.');
+        navigate('/dashboard');
+      } else {
+        console.error('Invalid response format:', response);
+        toast.error('Registration failed. Please try again.');
+      }
     } catch (error) {
       console.error('Registration error:', error);
-      // Error handling is done by our API interceptor
+      toast.error('Registration failed. Please check your information and try again.');
+      // Error handling is done by our API interceptor too
     }
   };
 
