@@ -5,6 +5,9 @@ export interface User {
   role: 'member' | 'trainer' | 'admin';
   is_verified: boolean;
   avatar?: string;
+  memberProfile?: Member;
+  trainerProfile?: Trainer;
+  adminProfile?: Admin;
 }
 
 export interface Member {
