@@ -12,12 +12,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const { user, isAuthenticated } = useAuth();
   
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50">
       {isAuthenticated && <Sidebar />}
-      <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="flex flex-col flex-1 w-full overflow-hidden">
         <Navbar />
         <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl mx-auto w-full">
             {children}
           </div>
         </main>

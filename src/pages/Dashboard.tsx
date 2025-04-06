@@ -13,7 +13,7 @@ const Dashboard: React.FC = () => {
   if (isLoading) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center h-64">
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gym-secondary"></div>
         </div>
       </MainLayout>
@@ -39,7 +39,9 @@ const Dashboard: React.FC = () => {
 
   return (
     <MainLayout>
-      {renderDashboard()}
+      <div className="container mx-auto px-4 py-6">
+        {renderDashboard()}
+      </div>
     </MainLayout>
   );
 };
