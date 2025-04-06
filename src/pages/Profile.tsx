@@ -30,7 +30,7 @@ const Profile: React.FC = () => {
   const [profileData, setProfileData] = useState({
     name: '',
     email: '',
-    phone: '',
+    phoneNumber: '', // Changed from 'phone' to a temporary field
     address: '',
     bio: '',
     avatar: '',
@@ -46,10 +46,20 @@ const Profile: React.FC = () => {
   
   useEffect(() => {
     if (user) {
+      // Get phone from the appropriate profile based on user role
+      let phone = '';
+      if (user.role === 'member' && user.memberProfile) {
+        phone = user.memberProfile.phone || '';
+      } else if (user.role === 'trainer' && user.trainerProfile) {
+        phone = user.trainerProfile.phone || '';
+      } else if (user.role === 'admin' && user.adminProfile) {
+        phone = user.adminProfile.phone || '';
+      }
+      
       setProfileData({
         name: user.name || '',
         email: user.email || '',
-        phone: user.phone || '',
+        phoneNumber: phone,
         address: '',
         bio: '',
         avatar: user.avatar || '',
@@ -131,7 +141,7 @@ const Profile: React.FC = () => {
                 </div>
                 <div className="flex items-center py-2 border-t">
                   <Phone className="h-4 w-4 mr-2 text-muted-foreground" />
-                  <span className="text-sm">{profileData.phone || 'No phone number provided'}</span>
+                  <span className="text-sm">{profileData.phoneNumber || 'No phone number provided'}</span>
                 </div>
                 <div className="flex items-center py-2 border-t border-b">
                   <CheckCircle className="h-4 w-4 mr-2 text-muted-foreground" />
@@ -186,11 +196,11 @@ const Profile: React.FC = () => {
                       </div>
                       
                       <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
+                        <Label htmlFor="phoneNumber">Phone Number</Label>
                         <Input 
-                          id="phone" 
-                          value={profileData.phone} 
-                          onChange={(e) => setProfileData({...profileData, phone: e.target.value})}
+                          id="phoneNumber" 
+                          value={profileData.phoneNumber} 
+                          onChange={(e) => setProfileData({...profileData, phoneNumber: e.target.value})}
                         />
                       </div>
                       

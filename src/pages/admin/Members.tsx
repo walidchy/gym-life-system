@@ -33,12 +33,12 @@ const mockMembers = [
       id: 1, 
       name: 'Jane Cooper', 
       email: 'jane@example.com', 
-      role: 'member', 
+      role: 'member' as const, 
       is_verified: true,
       avatar: 'https://ui-avatars.com/api/?name=Jane+Cooper'
     },
     birth_date: '1990-05-15',
-    gender: 'female',
+    gender: 'female' as const,
     address: '123 Main St, City',
     phone: '(555) 123-4567',
     membership: { name: 'Premium', end_date: '2024-12-31', is_active: true }
@@ -49,12 +49,12 @@ const mockMembers = [
       id: 2, 
       name: 'John Smith', 
       email: 'john@example.com', 
-      role: 'member', 
+      role: 'member' as const, 
       is_verified: true,
       avatar: 'https://ui-avatars.com/api/?name=John+Smith'
     },
     birth_date: '1985-10-20',
-    gender: 'male',
+    gender: 'male' as const,
     address: '456 Oak St, Town',
     phone: '(555) 987-6543',
     membership: { name: 'Basic', end_date: '2024-06-30', is_active: true }
@@ -65,12 +65,12 @@ const mockMembers = [
       id: 3, 
       name: 'Emily Johnson', 
       email: 'emily@example.com', 
-      role: 'member', 
+      role: 'member' as const, 
       is_verified: false,
       avatar: 'https://ui-avatars.com/api/?name=Emily+Johnson'
     },
     birth_date: '1993-02-10',
-    gender: 'female',
+    gender: 'female' as const,
     address: '789 Pine St, Village',
     phone: '(555) 456-7890',
     membership: { name: 'Standard', end_date: '2024-03-15', is_active: false }
@@ -101,7 +101,7 @@ const Members: React.FC = () => {
       try {
         // Simulate API call
         setTimeout(() => {
-          setMembers(mockMembers);
+          setMembers(mockMembers as MemberWithUser[]);
           setIsLoading(false);
         }, 1000);
       } catch (error) {
@@ -197,7 +197,7 @@ const Members: React.FC = () => {
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gym-primary"></div>
               </div>
-            ) : filteredMembers.length > 0 ? (
+            ) : members.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -211,7 +211,22 @@ const Members: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredMembers.map((member) => (
+                    {members
+                      .filter(member => {
+                        const matchesSearch = 
+                          member.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          member.user.email.toLowerCase().includes(searchQuery.toLowerCase());
+                        
+                        const matchesMembership = membershipFilter === '' || 
+                          (member.membership && member.membership.name === membershipFilter);
+                        
+                        const matchesStatus = statusFilter === '' || 
+                          (statusFilter === 'active' && member.membership?.is_active) ||
+                          (statusFilter === 'inactive' && !member.membership?.is_active);
+                        
+                        return matchesSearch && matchesMembership && matchesStatus;
+                      })
+                      .map((member) => (
                       <TableRow key={member.user_id}>
                         <TableCell>
                           <div className="flex items-center gap-3">

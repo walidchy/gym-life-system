@@ -33,7 +33,7 @@ const mockTrainers = [
       id: 4, 
       name: 'Alex Bennett', 
       email: 'alex@example.com', 
-      role: 'trainer', 
+      role: 'trainer' as const, 
       is_verified: true,
       avatar: 'https://ui-avatars.com/api/?name=Alex+Bennett'
     },
@@ -50,7 +50,7 @@ const mockTrainers = [
       id: 5, 
       name: 'Sarah Miller', 
       email: 'sarah@example.com', 
-      role: 'trainer', 
+      role: 'trainer' as const, 
       is_verified: true,
       avatar: 'https://ui-avatars.com/api/?name=Sarah+Miller'
     },
@@ -67,7 +67,7 @@ const mockTrainers = [
       id: 6, 
       name: 'Michael Chen', 
       email: 'michael@example.com', 
-      role: 'trainer', 
+      role: 'trainer' as const, 
       is_verified: false,
       avatar: 'https://ui-avatars.com/api/?name=Michael+Chen'
     },
@@ -99,7 +99,7 @@ const Trainers: React.FC = () => {
       try {
         // Simulate API call
         setTimeout(() => {
-          setTrainers(mockTrainers);
+          setTrainers(mockTrainers as TrainerWithUser[]);
           setIsLoading(false);
         }, 1000);
       } catch (error) {
