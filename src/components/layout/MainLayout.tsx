@@ -16,10 +16,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       {isAuthenticated && <Sidebar />}
       <div className="flex flex-col flex-1 w-full overflow-hidden">
         <Navbar />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50">
-          <div className="max-w-7xl mx-auto w-full">
-            {children}
-          </div>
+        <main className="flex-1 overflow-y-auto bg-gray-50">
+          {children}
         </main>
         <footer className="py-4 px-6 border-t bg-white">
           <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center">
