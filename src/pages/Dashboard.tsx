@@ -39,7 +39,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="w-full">
+      <div className="max-w-7xl mx-auto">
         {renderDashboard()}
       </div>
     </MainLayout>
