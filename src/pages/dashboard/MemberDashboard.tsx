@@ -1,35 +1,22 @@
-
 import React, { useEffect, useState } from 'react';
 import { Calendar, Activity, CreditCard, Clock, Dumbbell, ChevronRight } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Booking, Activity as ActivityType, Membership } from '@/types';
+import { Booking } from '@/types';
 import { getMemberBookings } from '@/services/members';
-import { getCurrentMembership } from '@/services/membership';
-import { getUpcomingActivities } from '@/services/activities';
 import { Link } from 'react-router-dom';
 
 const MemberDashboard: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [membership, setMembership] = useState<Membership | null>(null);
-  const [upcomingActivities, setUpcomingActivities] = useState<ActivityType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         setIsLoading(true);
-        // Fetch data in parallel
-        const [bookingsData, membershipData, activitiesData] = await Promise.all([
-          getMemberBookings(),
-          getCurrentMembership().catch(() => null),
-          getUpcomingActivities()
-        ]);
-        
+        const bookingsData = await getMemberBookings();
         setBookings(bookingsData);
-        setMembership(membershipData);
-        setUpcomingActivities(activitiesData);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
@@ -40,22 +27,6 @@ const MemberDashboard: React.FC = () => {
     fetchDashboardData();
   }, []);
 
-  // Calculate days remaining in membership
-  const getDaysRemaining = () => {
-    if (!membership) return 0;
-    
-    const endDate = new Date(membership.end_date);
-    const today = new Date();
-    const diffTime = endDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return diffDays > 0 ? diffDays : 0;
-  };
-
-  const daysRemaining = getDaysRemaining();
-  const totalDays = membership?.membership_plan?.duration_days || 30; // Fallback to 30 days
-  const percentRemaining = Math.round((daysRemaining / totalDays) * 100);
-  
   // Format date from ISO to readable format
   const formatDate = (dateString: string) => {
     const options: Intl.DateTimeFormatOptions = { 
@@ -130,11 +101,11 @@ const MemberDashboard: React.FC = () => {
             <div className="text-2xl font-bold">
               {isLoading ? 
                 <div className="h-8 w-32 bg-gray-200 animate-pulse rounded"></div> : 
-                membership?.membership_plan?.name || 'No active plan'
+                'No active plan'
               }
             </div>
             <p className="text-xs text-muted-foreground">
-              {membership?.is_active ? 'Active membership' : 'Inactive'}
+              No active membership
             </p>
           </CardContent>
         </Card>
@@ -148,12 +119,12 @@ const MemberDashboard: React.FC = () => {
             <div className="text-2xl font-bold">
               {isLoading ? 
                 <div className="h-8 w-16 bg-gray-200 animate-pulse rounded"></div> : 
-                daysRemaining
+                0
               }
             </div>
-            <Progress value={percentRemaining} className="h-2 mt-2" />
+            <Progress value={0} className="h-2 mt-2" />
             <p className="text-xs text-muted-foreground mt-1">
-              {percentRemaining}% of membership remaining
+              0% of membership remaining
             </p>
           </CardContent>
         </Card>
@@ -238,27 +209,6 @@ const MemberDashboard: React.FC = () => {
                   </div>
                 ))}
               </div>
-            ) : upcomingActivities.length > 0 ? (
-              <div className="space-y-3">
-                {upcomingActivities.slice(0, 4).map((activity) => (
-                  <div key={activity.id} className="flex items-center p-3 rounded-md bg-gray-50 hover:bg-gray-100 transition-colors">
-                    <div className="h-10 w-10 rounded bg-gym-primary/10 text-gym-primary flex items-center justify-center mr-3">
-                      <Dumbbell className="h-5 w-5" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-medium text-sm">{activity.name}</h4>
-                      <p className="text-xs text-gray-500">
-                        {activity.difficulty_level} · {activity.duration_minutes} min
-                      </p>
-                    </div>
-                    <Button variant="ghost" size="sm" asChild>
-                      <Link to={`/activities/${activity.id}`}>
-                        Details
-                      </Link>
-                    </Button>
-                  </div>
-                ))}
-              </div>
             ) : (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">No activities available.</p>
@@ -267,77 +217,6 @@ const MemberDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Membership Status</CardTitle>
-          <CardDescription>Details about your current plan</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="w-full h-32 bg-gray-100 animate-pulse rounded-md"></div>
-          ) : membership ? (
-            <div className="grid md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-500">Current Plan</h3>
-                <p className="text-xl font-bold">{membership.membership_plan?.name}</p>
-                <p className="text-sm">{membership.membership_plan?.description}</p>
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-500">Duration</h3>
-                <p className="text-lg">
-                  <span className="font-bold">{formatDate(membership.start_date)}</span>
-                  <span className="mx-2 text-gray-400">to</span>
-                  <span className="font-bold">{formatDate(membership.end_date)}</span>
-                </p>
-                <div className="flex items-center">
-                  <Progress value={percentRemaining} className="h-2 flex-1" />
-                  <span className="ml-2 text-sm">{daysRemaining} days left</span>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-sm font-medium text-gray-500">Features</h3>
-                {membership.membership_plan?.features && (
-                  <ul className="text-sm space-y-1">
-                    {membership.membership_plan.features.slice(0, 3).map((feature, index) => (
-                      <li key={index} className="flex items-center">
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          className="h-4 w-4 text-green-500 mr-2"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-                <Button asChild className="mt-4">
-                  <Link to="/membership">Manage Membership</Link>
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-6">
-              <h3 className="text-lg font-medium mb-2">No Active Membership</h3>
-              <p className="text-muted-foreground mb-4">Subscribe to a membership plan to access premium features.</p>
-              <Button asChild>
-                <Link to="/membership/plans">View Membership Plans</Link>
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 };

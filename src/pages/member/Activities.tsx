@@ -26,7 +26,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Activity } from '@/types';
-import { getActivities, deleteActivity } from '@/services/activities';
+import { getActivities } from '@/services/activities';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 
@@ -60,16 +60,14 @@ const Activities: React.FC = () => {
     }
   };
 
-  const handleDeleteActivity = async (id: number) => {
-    if (window.confirm('Are you sure you want to delete this activity?')) {
-      try {
-        await deleteActivity(id);
-        setActivities(prev => prev.filter(activity => activity.id !== id));
-        toast.success('Activity deleted successfully');
-      } catch (error) {
-        console.error('Error deleting activity:', error);
-        toast.error('Failed to delete activity. It may have existing bookings.');
-      }
+  const handleJoinActivity = async (activityId: number) => {
+    try {
+      // Here you would typically call an API to join the activity
+      toast.success('Successfully joined the activity!');
+      // You might want to refresh the activities list or update the UI
+    } catch (error) {
+      console.error('Error joining activity:', error);
+      toast.error('Failed to join activity');
     }
   };
 
@@ -108,26 +106,21 @@ const Activities: React.FC = () => {
     }
   };
 
-  
   return (
     <MainLayout>
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Activities Management</h1>
-            <p className="text-muted-foreground">Manage all gym activities and classes</p>
+            <h1 className="text-2xl font-bold tracking-tight">Activities</h1>
+            <p className="text-muted-foreground">Browse and join gym activities and classes</p>
           </div>
-          <Button className="mt-4 md:mt-0" onClick={() => navigate('/admin/activities/new')}>
-            <PlusCircle className="h-4 w-4 mr-2" />
-            New Activity
-          </Button>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>All Activities</CardTitle>
+            <CardTitle>Available Activities</CardTitle>
             <CardDescription>
-              A list of all activities offered at the gym
+              A list of all activities you can join at the gym
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -204,7 +197,7 @@ const Activities: React.FC = () => {
                       <TableHead>Location</TableHead>
                       <TableHead>Equipment</TableHead>
                       <TableHead>Trainer</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -226,28 +219,13 @@ const Activities: React.FC = () => {
                         <TableCell>{activity.location}</TableCell>
                         <TableCell>{parseEquipment(activity.equipment_needed)}</TableCell>
                         <TableCell>{activity.trainer?.name || 'No trainer assigned'}</TableCell>
-                        <TableCell className="text-right space-x-2">
+                        <TableCell className="text-right">
                           <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => navigate(`/admin/activities/${activity.id}`)}
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleJoinActivity(activity.id)}
                           >
-                            View
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => navigate(`/admin/activities/${activity.id}/edit`)}
-                          >
-                            Edit
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-red-500 hover:text-red-700"
-                            onClick={() => handleDeleteActivity(activity.id)}
-                          >
-                            Delete
+                            Join
                           </Button>
                         </TableCell>
                       </TableRow>

@@ -69,14 +69,24 @@ export interface MembershipPlan {
   features: string[];
   is_active: boolean;
 }
-
+export interface Schedule {
+  id: number;
+  activity_id: number;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  is_recurring: boolean;
+  specific_date: string;
+  created_at: string;
+  updated_at: string;
+}
 export interface Membership {
   id: number;
   name: string;
   description: string;
   price: number;
   duration_days: number;
-  features: string[];
+  features: string[];  // This expects an array of strings after parsing
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -89,7 +99,7 @@ export interface Membership {
     name: string;
     description?: string;
     duration_days: number;
-    features?: string[];
+    features?: string[];  // This field also needs to be handled if necessary
   };
 }
 
@@ -127,9 +137,12 @@ export interface Booking {
   activity_id: number;
   activity?: Activity;
   activity_schedule_id?: number;
+  schedule?: Schedule; // <-- add this if it's returned by the API
   date: string;
   status: 'upcoming' | 'completed' | 'canceled';
   cancellation_reason?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Equipment {
