@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { CreditCard, Check, AlertCircle, Calendar } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,8 @@ import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Membership } from '@/types';
-import { getCurrentMembership } from '@/services/membership';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getCurrentMembership, cancelMembership } from '@/services/membership';
 
 const mockPlans = [
   {
@@ -60,26 +60,27 @@ const mockPlans = [
 ];
 
 const MemberMembership: React.FC = () => {
-  const [membership, setMembership] = useState<Membership | null>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [activeTab, setActiveTab] = useState<string>('current');
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchMembership = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getCurrentMembership();
-        setMembership(data);
-      } catch (error) {
-        console.error('Error fetching membership:', error);
-        // Not showing toast since user might not have a membership yet
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Fetch membership with React Query
+  const { data: membership, isLoading } = useQuery({
+    queryKey: ['membership', 'current'],
+    queryFn: getCurrentMembership
+  });
 
-    fetchMembership();
-  }, []);
+  // Cancel membership mutation
+  const cancelMembershipMutation = useMutation({
+    mutationFn: () => cancelMembership(membership?.id || 0),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['membership', 'current'] });
+      toast.success('Membership cancellation request submitted');
+    },
+    onError: (error) => {
+      console.error('Error cancelling membership:', error);
+      toast.error('Failed to cancel membership');
+    }
+  });
 
   // Calculate days remaining in membership
   const getDaysRemaining = () => {
@@ -110,12 +111,11 @@ const MemberMembership: React.FC = () => {
     // Would send API request to purchase plan
     toast.success('Membership purchased successfully');
     // In a real app, would refresh membership data
+    queryClient.invalidateQueries({ queryKey: ['membership', 'current'] });
   };
 
   const handleCancelMembership = () => {
-    // Would send API request to cancel membership
-    toast.success('Membership cancellation request submitted');
-    // In a real app, would refresh membership data
+    cancelMembershipMutation.mutate();
   };
 
   return (
@@ -199,8 +199,12 @@ const MemberMembership: React.FC = () => {
                   </div>
                 </CardContent>
                 <CardFooter className="flex justify-between">
-                  <Button variant="outline" onClick={handleCancelMembership}>
-                    Cancel Membership
+                  <Button 
+                    variant="outline" 
+                    onClick={handleCancelMembership}
+                    disabled={cancelMembershipMutation.isPending}
+                  >
+                    {cancelMembershipMutation.isPending ? 'Processing...' : 'Cancel Membership'}
                   </Button>
                   <Button asChild>
                     <a href="#plans" onClick={() => setActiveTab('plans')}>

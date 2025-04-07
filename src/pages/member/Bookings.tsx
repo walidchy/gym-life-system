@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { Calendar, Clock, Dumbbell, Filter, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Clock, Dumbbell, Search } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,31 +8,32 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import { Booking } from '@/types';
-import { getMemberBookings } from '@/services/members';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { getMemberBookings, cancelBooking } from '@/services/members';
 
 const MemberBookings: React.FC = () => {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeTab, setActiveTab] = useState<string>('upcoming');
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchBookings = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getMemberBookings();
-        setBookings(data);
-      } catch (error) {
-        console.error('Error fetching bookings:', error);
-        toast.error('Failed to load bookings');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  // Fetch bookings with React Query
+  const { data: bookings = [], isLoading } = useQuery({
+    queryKey: ['bookings', 'member'],
+    queryFn: getMemberBookings
+  });
 
-    fetchBookings();
-  }, []);
+  // Cancel booking mutation
+  const cancelBookingMutation = useMutation({
+    mutationFn: (bookingId: number) => cancelBooking(bookingId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['bookings', 'member'] });
+      toast.success('Booking cancelled successfully');
+    },
+    onError: (error) => {
+      console.error('Error cancelling booking:', error);
+      toast.error('Failed to cancel booking');
+    }
+  });
 
   const filteredBookings = bookings.filter(booking => {
     const matchesSearch = 
@@ -59,16 +60,7 @@ const MemberBookings: React.FC = () => {
   };
 
   const handleCancelBooking = (bookingId: number) => {
-    // Would send API request to cancel booking
-    toast.success('Booking cancelled successfully');
-    // Update UI to show booking as canceled
-    setBookings(prevBookings => 
-      prevBookings.map(booking => 
-        booking.id === bookingId 
-          ? { ...booking, status: 'canceled' } 
-          : booking
-      )
-    );
+    cancelBookingMutation.mutate(bookingId);
   };
 
   return (
@@ -152,8 +144,13 @@ const MemberBookings: React.FC = () => {
                           {booking.status === 'upcoming' ? 'Upcoming' : booking.status === 'completed' ? 'Completed' : 'Cancelled'}
                         </Badge>
                         {booking.status === 'upcoming' && (
-                          <Button variant="outline" size="sm" onClick={() => handleCancelBooking(booking.id)}>
-                            Cancel
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleCancelBooking(booking.id)}
+                            disabled={cancelBookingMutation.isPending}
+                          >
+                            {cancelBookingMutation.isPending ? 'Cancelling...' : 'Cancel'}
                           </Button>
                         )}
                         <Button variant="ghost" size="sm" asChild>

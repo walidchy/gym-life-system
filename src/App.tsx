@@ -19,7 +19,6 @@ import Trainers from "./pages/admin/Trainers";
 import Activities from "./pages/admin/Activities";
 import Memberships from "./pages/admin/Memberships";
 import Equipment from "./pages/admin/Equipment";
-import Settings from "./pages/admin/Settings";
 
 // Member pages
 import MemberActivities from "./pages/member/Activities";
@@ -51,7 +50,6 @@ const App = () => {
               <Route path="/admin/activities" element={<Activities />} />
               <Route path="/admin/memberships" element={<Memberships />} />
               <Route path="/admin/equipment" element={<Equipment />} />
-              <Route path="/admin/settings" element={<Settings />} />
               
               {/* Member routes */}
               <Route path="/activities" element={<MemberActivities />} />

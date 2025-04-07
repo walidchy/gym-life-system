@@ -1,37 +1,23 @@
 
-import React, { useState, useEffect } from 'react';
-import { Calendar, Filter, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { Calendar, Search } from 'lucide-react';
 import MainLayout from '@/components/layout/MainLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { toast } from 'sonner';
-import { Activity } from '@/types';
+import { useQuery } from '@tanstack/react-query';
 import { getUpcomingActivities } from '@/services/activities';
 
 const MemberActivities: React.FC = () => {
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
 
-  useEffect(() => {
-    const fetchActivities = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getUpcomingActivities();
-        setActivities(data);
-      } catch (error) {
-        console.error('Error fetching activities:', error);
-        toast.error('Failed to load activities');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchActivities();
-  }, []);
+  // Fetch activities with React Query
+  const { data: activities = [], isLoading } = useQuery({
+    queryKey: ['activities', 'upcoming'],
+    queryFn: getUpcomingActivities
+  });
 
   const filteredActivities = activities.filter(activity => {
     const matchesSearch = 

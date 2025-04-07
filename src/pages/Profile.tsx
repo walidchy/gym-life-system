@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, Lock, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -20,10 +21,12 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
-import { updateProfile, updatePassword } from '@/services/profile';
+import { getProfile, updateProfile, updatePassword } from '@/services/profile';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 const Profile: React.FC = () => {
   const { user, setUser } = useAuth();
+  const queryClient = useQueryClient();
 
   const [profileData, setProfileData] = useState({
     phone: '',
@@ -38,33 +41,54 @@ const Profile: React.FC = () => {
     confirm_password: '',
   });
 
-  const [isLoading, setIsLoading] = useState(false);
-
-  useEffect(() => {
-    if (user) {
+  // Fetch profile data
+  const { data: profileUser, isLoading: isProfileLoading } = useQuery({
+    queryKey: ['profile'],
+    queryFn: getProfile,
+    onSuccess: (data) => {
       setProfileData({
-        phone: user.phone || '',
-        position: user.position || '',
-        department: user.department || '',
-        role: user.role || '',
+        phone: data.phone || '',
+        position: data.position || '',
+        department: data.department || '',
+        role: data.role || '',
       });
+    },
+  });
+
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: updateProfile,
+    onSuccess: (updatedUser) => {
+      setUser({ ...user, ...updatedUser });
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      toast.success('Profile updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
     }
-  }, [user]);
+  });
+
+  // Update password mutation
+  const updatePasswordMutation = useMutation({
+    mutationFn: updatePassword,
+    onSuccess: () => {
+      setPasswordData({
+        current_password: '',
+        new_password: '',
+        confirm_password: '',
+      });
+      toast.success('Password updated successfully');
+    },
+    onError: (error) => {
+      console.error('Error updating password:', error);
+      toast.error('Failed to update password');
+    }
+  });
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      const updatedUser = await updateProfile(profileData);
-      setUser({ ...user, ...updatedUser });
-      toast.success('Profile updated successfully');
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
-    } finally {
-      setIsLoading(false);
-    }
+    updateProfileMutation.mutate(profileData);
   };
 
   const handlePasswordSubmit = async (e: React.FormEvent) => {
@@ -75,28 +99,13 @@ const Profile: React.FC = () => {
       return;
     }
 
-    setIsLoading(true);
-
-    try {
-      await updatePassword({
-        current_password: passwordData.current_password,
-        new_password: passwordData.new_password,
-      });
-
-      setPasswordData({
-        current_password: '',
-        new_password: '',
-        confirm_password: '',
-      });
-
-      toast.success('Password updated successfully');
-    } catch (error) {
-      console.error('Error updating password:', error);
-      toast.error('Failed to update password');
-    } finally {
-      setIsLoading(false);
-    }
+    updatePasswordMutation.mutate({
+      current_password: passwordData.current_password,
+      new_password: passwordData.new_password,
+    });
   };
+
+  const isLoading = updateProfileMutation.isPending || updatePasswordMutation.isPending;
 
   return (
     <MainLayout>
@@ -128,12 +137,12 @@ const Profile: React.FC = () => {
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Name</Label>
-                    <Input id="name" value={user?.name || ''} disabled />
+                    <Input id="name" value={profileUser?.name || ''} disabled />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" value={user?.email || ''} disabled />
+                    <Input id="email" value={profileUser?.email || ''} disabled />
                   </div>
 
                   <div className="space-y-2">
