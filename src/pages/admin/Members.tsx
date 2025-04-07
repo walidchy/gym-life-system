@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,6 +25,17 @@ import MainLayout from '@/components/layout/MainLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMembers, deleteMember } from '@/services/members';
 import { Member, Membership } from '@/types';
+
+// Define a separate interface for the member's membership which has a different structure
+interface MemberMembership {
+  id: number;
+  name: string;
+  is_active: boolean;
+  end_date: string;
+  membership_plan?: {
+    name: string;
+  };
+}
 
 const Members: React.FC = () => {
   const [members, setMembers] = useState<Member[]>([]);
@@ -76,7 +88,7 @@ const Members: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const getLatestMembership = (memberships?: Membership[]) => {
+  const getLatestMembership = (memberships?: MemberMembership[]) => {
     if (!memberships || memberships.length === 0) return null;
     return [...memberships].sort((a, b) => 
       new Date(b.end_date).getTime() - new Date(a.end_date).getTime()

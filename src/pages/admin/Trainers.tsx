@@ -47,7 +47,6 @@ const Trainers: React.FC = () => {
       if (specializationFilter) queryParams.append('specialization', specializationFilter);
       
       const response = await getTrainers(queryParams.toString());
-      // Ensure we're properly extracting the array from the response
       setTrainers(response?.data || []);
     } catch (error) {
       console.error('Error fetching trainers:', error);
@@ -88,11 +87,18 @@ const Trainers: React.FC = () => {
     return Array.from(specializations);
   };
 
-  const parseCertifications = (certifications: string) => {
+  const parseCertifications = (certifications: string | string[] | undefined): string => {
+    if (!certifications) return '-';
+    
+    if (Array.isArray(certifications)) {
+      return certifications.join(', ');
+    }
+    
     try {
-      return JSON.parse(certifications).join(', ');
+      const parsed = JSON.parse(certifications as string);
+      return Array.isArray(parsed) ? parsed.join(', ') : String(certifications);
     } catch {
-      return certifications;
+      return String(certifications);
     }
   };
 
