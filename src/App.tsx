@@ -21,6 +21,11 @@ import Memberships from "./pages/admin/Memberships";
 import Equipment from "./pages/admin/Equipment";
 import Settings from "./pages/admin/Settings";
 
+// Member pages
+import MemberActivities from "./pages/member/Activities";
+import MemberBookings from "./pages/member/Bookings";
+import MemberMembership from "./pages/member/Membership";
+
 const App = () => {
   // Create a new QueryClient instance inside the component
   const queryClient = new QueryClient();
@@ -47,6 +52,11 @@ const App = () => {
               <Route path="/admin/memberships" element={<Memberships />} />
               <Route path="/admin/equipment" element={<Equipment />} />
               <Route path="/admin/settings" element={<Settings />} />
+              
+              {/* Member routes */}
+              <Route path="/activities" element={<MemberActivities />} />
+              <Route path="/bookings" element={<MemberBookings />} />
+              <Route path="/membership" element={<MemberMembership />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
