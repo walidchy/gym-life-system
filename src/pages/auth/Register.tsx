@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -18,6 +17,13 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 const registerSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters' }),
@@ -49,7 +55,6 @@ const Register: React.FC = () => {
   
   const onSubmit = async (data: RegisterFormValues) => {
     try {
-      // Ensure data is explicitly typed as a complete RegisterData object
       const userData = {
         name: data.name,
         email: data.email,
@@ -62,9 +67,6 @@ const Register: React.FC = () => {
       
       if (response && response.user) {
         toast.success(response.message || 'Registration successful! Your account is pending verification.');
-        
-        // Don't set auth token since user needs verification first
-        // Instead redirect to login page
         navigate('/login');
       } else {
         console.error('Invalid response format:', response);
@@ -73,7 +75,6 @@ const Register: React.FC = () => {
     } catch (error) {
       console.error('Registration error:', error);
       toast.error('Registration failed. Please check your information and try again.');
-      // Error handling is done by our API interceptor too
     }
   };
 
@@ -112,6 +113,29 @@ const Register: React.FC = () => {
                     {...field}
                     className="gym-input"
                   />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="role"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Account Type</FormLabel>
+                <FormControl>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <SelectTrigger className="gym-input">
+                      <SelectValue placeholder="Select account type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="member">Member</SelectItem>
+                      <SelectItem value="trainer">Trainer</SelectItem>
+                      <SelectItem value="admin">Administrator</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </FormControl>
                 <FormMessage />
               </FormItem>

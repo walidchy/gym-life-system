@@ -1,42 +1,36 @@
-
 import api from './api';
 import { Activity, ActivitySchedule, ApiResponse } from '../types';
 
-export const getActivities = async (): Promise<Activity[]> => {
-  const response = await api.get<ApiResponse<Activity[]>>('/activities');
-  return response.data.data;
-};
-
-export const getActivity = async (activityId: number): Promise<Activity> => {
-  const response = await api.get<ApiResponse<Activity>>(`/activities/${activityId}`);
-  return response.data.data;
-};
-
-export const getActivitySchedules = async (activityId: number): Promise<ActivitySchedule[]> => {
-  const response = await api.get<ApiResponse<ActivitySchedule[]>>(`/activities/${activityId}/schedules`);
-  return response.data.data;
-};
-
-export const searchActivities = async (query: string): Promise<Activity[]> => {
-  const response = await api.get<ApiResponse<Activity[]>>(`/activities/search?query=${query}`);
-  return response.data.data;
-};
-
+// Add this function with proper export
 export const getUpcomingActivities = async (): Promise<Activity[]> => {
-  const response = await api.get<ApiResponse<Activity[]>>('/activities/upcoming');
-  return response.data.data;
+  try {
+    const response = await api.get<ApiResponse<Activity[]>>('/activities/upcoming');
+    return response.data.data || [];
+  } catch (error) {
+    console.error('Error fetching upcoming activities:', error);
+    return [];
+  }
 };
 
-export const createActivity = async (activityData: Partial<Activity>): Promise<Activity> => {
-  const response = await api.post<ApiResponse<Activity>>('/activities', activityData);
-  return response.data.data;
-};
-
-export const updateActivity = async (activityId: number, activityData: Partial<Activity>): Promise<Activity> => {
-  const response = await api.put<ApiResponse<Activity>>(`/activities/${activityId}`, activityData);
-  return response.data.data;
+// Your existing functions should look like this:
+export const getActivities = async (queryParams?: string): Promise<Activity[]> => {
+  try {
+    const url = `/activities${queryParams ? `?${queryParams}` : ''}`;
+    const response = await api.get<ApiResponse<Activity[]>>(url);
+    return response.data.data || [];
+  } catch (error) {
+    console.error('Error fetching activities:', error);
+    return [];
+  }
 };
 
 export const deleteActivity = async (activityId: number): Promise<void> => {
-  await api.delete(`/activities/${activityId}`);
+  try {
+    await api.delete(`/activities/${activityId}`);
+  } catch (error) {
+    console.error('Error deleting activity:', error);
+    throw error;
+  }
 };
+
+// Keep other functions as needed...

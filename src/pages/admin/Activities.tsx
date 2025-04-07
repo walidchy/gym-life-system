@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -46,16 +45,16 @@ const Activities: React.FC = () => {
   const fetchActivities = async () => {
     setIsLoading(true);
     try {
-      // Build query params for filtering
       const queryParams = new URLSearchParams();
       if (categoryFilter) queryParams.append('category', categoryFilter);
       if (difficultyFilter) queryParams.append('difficulty_level', difficultyFilter);
       
-      const data = await getActivities();
-      setActivities(data);
+      const data = await getActivities(queryParams.toString());
+      setActivities(data || []);
     } catch (error) {
       console.error('Error fetching activities:', error);
       toast.error('Failed to load activities');
+      setActivities([]);
     } finally {
       setIsLoading(false);
     }
@@ -65,7 +64,7 @@ const Activities: React.FC = () => {
     if (window.confirm('Are you sure you want to delete this activity?')) {
       try {
         await deleteActivity(id);
-        setActivities(activities.filter(activity => activity.id !== id));
+        setActivities(prev => prev.filter(activity => activity.id !== id));
         toast.success('Activity deleted successfully');
       } catch (error) {
         console.error('Error deleting activity:', error);
@@ -74,10 +73,15 @@ const Activities: React.FC = () => {
     }
   };
 
-  const filteredActivities = activities.filter(activity => 
-    activity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    activity.description.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredActivities = activities.filter(activity => {
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      activity.name.toLowerCase().includes(searchLower) ||
+      activity.description.toLowerCase().includes(searchLower) ||
+      activity.location.toLowerCase().includes(searchLower) ||
+      (activity.trainer?.name || '').toLowerCase().includes(searchLower)
+    );
+  });
 
   const getCategories = () => {
     const categories = new Set(activities.map(activity => activity.category));
@@ -87,6 +91,14 @@ const Activities: React.FC = () => {
   const getDifficultyLevels = () => {
     const levels = new Set(activities.map(activity => activity.difficulty_level));
     return Array.from(levels);
+  };
+
+  const parseEquipment = (equipment: string) => {
+    try {
+      return JSON.parse(equipment).join(', ');
+    } catch {
+      return equipment;
+    }
   };
 
   return (
@@ -182,6 +194,7 @@ const Activities: React.FC = () => {
                       <TableHead>Difficulty</TableHead>
                       <TableHead>Duration</TableHead>
                       <TableHead>Location</TableHead>
+                      <TableHead>Equipment</TableHead>
                       <TableHead>Trainer</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -203,7 +216,8 @@ const Activities: React.FC = () => {
                         </TableCell>
                         <TableCell>{activity.duration_minutes} min</TableCell>
                         <TableCell>{activity.location}</TableCell>
-                        <TableCell>{activity.trainer_name || 'No trainer assigned'}</TableCell>
+                        <TableCell>{parseEquipment(activity.equipment_needed)}</TableCell>
+                        <TableCell>{activity.trainer?.name || 'No trainer assigned'}</TableCell>
                         <TableCell className="text-right space-x-2">
                           <Button 
                             variant="ghost" 
@@ -236,6 +250,13 @@ const Activities: React.FC = () => {
             ) : (
               <div className="text-center py-10">
                 <p className="text-muted-foreground">No activities found.</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={fetchActivities}
+                >
+                  Refresh List
+                </Button>
               </div>
             )}
           </CardContent>

@@ -2,22 +2,34 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  avatar?: string;
+  trainer?: Trainer;
+  active_members?: number;
+  phone?: string;
+  address?: string;
+  bio?: string;
   role: 'member' | 'trainer' | 'admin';
   is_verified: boolean;
-  avatar?: string;
-  memberProfile?: Member;
-  trainerProfile?: Trainer;
-  adminProfile?: Admin;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Member {
-  user_id: number;
-  birth_date?: string;
-  gender?: 'male' | 'female';
-  address?: string;
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+  is_verified: boolean;
   phone?: string;
-  emergency_contact?: string;
-  health_conditions?: string;
+  avatar?: string;
+  memberships?: {
+    id: number;
+    name: string;
+    is_active: boolean;
+    end_date: string;
+  }[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Trainer {
@@ -28,6 +40,7 @@ export interface Trainer {
   certifications?: string[];
   phone?: string;
 }
+
 
 export interface Admin {
   user_id: number;
@@ -48,12 +61,17 @@ export interface MembershipPlan {
 
 export interface Membership {
   id: number;
-  user_id: number;
-  membership_plan_id: number;
-  membership_plan?: MembershipPlan;
-  start_date: string;
-  end_date: string;
+  name: string;
+  description: string;
+  price: number;
+  duration_days: number;
+  features: string[];
   is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  category?: string;
+  type?: string;
+  trainer?: { name: string };
 }
 
 export interface Activity {
@@ -95,12 +113,14 @@ export interface Booking {
 export interface Equipment {
   id: number;
   name: string;
-  description?: string;
+  description: string;
   category: string;
   quantity: number;
-  purchase_date?: string;
-  maintenance_date?: string;
+  purchase_date: string;
+  maintenance_date: string | null;
   status: 'available' | 'in_use' | 'maintenance' | 'retired';
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Notification {
@@ -142,4 +162,7 @@ export interface ApiResponse<T> {
   data: T;
   message?: string;
   status: string;
+  current_page?: number;
+  total?: number;
+  last_page?: number;
 }
