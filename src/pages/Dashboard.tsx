@@ -39,7 +39,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <MainLayout>
-      <div className="px-6 py-6 md:px-8 max-w-7xl mx-auto w-full">
+      <div className="px-4 py-8 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
         {renderDashboard()}
       </div>
     </MainLayout>

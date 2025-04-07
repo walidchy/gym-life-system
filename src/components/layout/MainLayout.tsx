@@ -14,9 +14,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {isAuthenticated && <Sidebar />}
-      <div className="flex flex-col flex-1 w-full">
+      <div className={`flex flex-col flex-1 w-full ${isAuthenticated ? 'md:ml-64' : ''}`}>
         <Navbar />
-        <main className="flex-1 overflow-y-auto bg-gray-50">
+        <main className="flex-1 overflow-y-auto bg-gray-50 pb-10">
           {children}
         </main>
         <footer className="py-4 px-6 border-t bg-white">
