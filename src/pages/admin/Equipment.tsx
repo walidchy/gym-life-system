@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Search, Filter, AlertTriangle } from 'lucide-react';
+import { PlusCircle, Search, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -20,86 +19,12 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { Equipment as EquipmentType } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
-
-// This would be a real API service in production
-const mockEquipment: EquipmentType[] = [
-  {
-    id: 1,
-    name: 'Treadmill - TechnoGym',
-    description: 'Commercial grade treadmill with 15% incline capability',
-    category: 'Cardio',
-    quantity: 8,
-    purchase_date: '2023-04-15',
-    maintenance_date: '2024-01-10',
-    status: 'available'
-  },
-  {
-    id: 2,
-    name: 'Dumbbells Set (5-50 lbs)',
-    description: 'Complete set of rubber hex dumbbells from 5 to 50 pounds',
-    category: 'Strength',
-    quantity: 10,
-    purchase_date: '2022-06-20',
-    maintenance_date: null,
-    status: 'available'
-  },
-  {
-    id: 3,
-    name: 'Smith Machine',
-    description: 'Commercial Smith machine with safety stops',
-    category: 'Strength',
-    quantity: 2,
-    purchase_date: '2022-03-10',
-    maintenance_date: '2023-12-05',
-    status: 'maintenance'
-  },
-  {
-    id: 4,
-    name: 'Exercise Bike - Assault AirBike',
-    description: 'Air resistance exercise bike',
-    category: 'Cardio',
-    quantity: 6,
-    purchase_date: '2023-01-05',
-    maintenance_date: null,
-    status: 'in_use'
-  },
-  {
-    id: 5,
-    name: 'Yoga Mats',
-    description: 'Premium non-slip yoga mats',
-    category: 'Accessories',
-    quantity: 30,
-    purchase_date: '2023-07-12',
-    maintenance_date: null,
-    status: 'available'
-  },
-  {
-    id: 6,
-    name: 'Elliptical Trainer',
-    description: 'Low-impact elliptical cross trainer',
-    category: 'Cardio',
-    quantity: 4,
-    purchase_date: '2021-11-15',
-    maintenance_date: '2024-02-20',
-    status: 'available'
-  },
-  {
-    id: 7,
-    name: 'Power Rack',
-    description: 'Heavy duty power rack with pull-up bar',
-    category: 'Strength',
-    quantity: 3,
-    purchase_date: '2022-08-30',
-    maintenance_date: null,
-    status: 'in_use'
-  }
-];
+import { getEquipment, deleteEquipment } from '@/services/equipment';
 
 const Equipment: React.FC = () => {
-  const [equipment, setEquipment] = useState<EquipmentType[]>([]);
+  const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
@@ -107,29 +32,41 @@ const Equipment: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // In production, this would fetch from an API
-    const fetchEquipment = async () => {
-      setIsLoading(true);
-      try {
-        // Simulate API call
-        setTimeout(() => {
-          setEquipment(mockEquipment);
-          setIsLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error('Error fetching equipment:', error);
-        toast.error('Failed to load equipment');
-        setIsLoading(false);
-      }
-    };
-
     fetchEquipment();
   }, []);
+
+  const fetchEquipment = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getEquipment();
+      console.log("Fetched equipment:", data);
+      setEquipment(data);
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('Failed to load equipment');
+      setEquipment([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this equipment?')) {
+      try {
+        await deleteEquipment(id);
+        setEquipment(prev => prev.filter(item => item.id !== id));
+        toast.success('Equipment deleted successfully');
+      } catch (error) {
+        console.error('Error:', error);
+        toast.error('Failed to delete equipment');
+      }
+    }
+  };
 
   const filteredEquipment = equipment.filter(item => {
     const matchesSearch = 
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()));
+      (item.description?.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const matchesCategory = categoryFilter === '' || item.category === categoryFilter;
     const matchesStatus = statusFilter === '' || item.status === statusFilter;
@@ -142,25 +79,25 @@ const Equipment: React.FC = () => {
     return Array.from(categories);
   };
 
-  const getStatusLabel = (status: string) => {
+  const getStatusBadge = (status: string) => {
     switch(status) {
-      case 'available':
-        return { label: 'Available', variant: 'default', className: 'bg-green-100 text-green-800' };
-      case 'in_use':
-        return { label: 'In Use', variant: 'secondary', className: 'bg-blue-100 text-blue-800' };
-      case 'maintenance':
-        return { label: 'Maintenance', variant: 'outline', className: 'bg-orange-100 text-orange-800' };
-      case 'retired':
-        return { label: 'Retired', variant: 'destructive', className: 'bg-red-100 text-red-800' };
-      default:
-        return { label: status, variant: 'outline', className: '' };
+      case 'available': return { label: 'Available', className: 'bg-green-100 text-green-800' };
+      case 'in_use': return { label: 'In Use', className: 'bg-blue-100 text-blue-800' };
+      case 'maintenance': return { label: 'Maintenance', className: 'bg-orange-100 text-orange-800' };
+      case 'retired': return { label: 'Retired', className: 'bg-red-100 text-red-800' };
+      default: return { label: status, className: '' };
     }
   };
 
   const maintenanceNeeded = equipment.filter(
-    item => item.status === 'maintenance' ||
-    (item.maintenance_date && new Date(item.maintenance_date) <= new Date())
+    item => item.status === 'maintenance' || 
+           (item.maintenance_date && new Date(item.maintenance_date) <= new Date())
   ).length;
+
+  const totalItems = equipment.reduce((sum, item) => sum + item.quantity, 0);
+  const availableItems = equipment
+    .filter(item => item.status === 'available')
+    .reduce((sum, item) => sum + item.quantity, 0);
 
   return (
     <MainLayout>
@@ -168,9 +105,9 @@ const Equipment: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Equipment Management</h1>
-            <p className="text-muted-foreground">Track and manage gym equipment</p>
+            <p className="text-muted-foreground">Manage gym equipment inventory</p>
           </div>
-          <Button className="mt-4 md:mt-0" onClick={() => navigate('/admin/equipment/new')}>
+          <Button onClick={() => navigate('/admin/equipment/new')}>
             <PlusCircle className="h-4 w-4 mr-2" />
             Add Equipment
           </Button>
@@ -179,52 +116,36 @@ const Equipment: React.FC = () => {
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Total Equipment</CardTitle>
+              <CardTitle className="text-sm font-medium">Total Items</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {equipment.reduce((sum, item) => sum + item.quantity, 0)} items
-              </div>
+              <div className="text-2xl font-bold">{totalItems}</div>
               <p className="text-xs text-muted-foreground">
-                Across {equipment.length} equipment types
+                {equipment.length} equipment types
               </p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">Available Equipment</CardTitle>
+              <CardTitle className="text-sm font-medium">Available</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {equipment
-                  .filter(item => item.status === 'available')
-                  .reduce((sum, item) => sum + item.quantity, 0)} items
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Ready for member use
-              </p>
+              <div className="text-2xl font-bold">{availableItems}</div>
+              <p className="text-xs text-muted-foreground">Ready for use</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium">
-                <div className="flex items-center">
-                  Maintenance Required
-                  {maintenanceNeeded > 0 && (
-                    <AlertTriangle className="h-4 w-4 ml-2 text-orange-500" />
-                  )}
-                </div>
+              <CardTitle className="text-sm font-medium flex items-center">
+                Maintenance Needed
+                {maintenanceNeeded > 0 && <AlertTriangle className="ml-2 h-4 w-4 text-orange-500" />}
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {maintenanceNeeded} items
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Requiring service or maintenance
-              </p>
+              <div className="text-2xl font-bold">{maintenanceNeeded}</div>
+              <p className="text-xs text-muted-foreground">Requiring attention</p>
             </CardContent>
           </Card>
         </div>
@@ -232,9 +153,7 @@ const Equipment: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle>Equipment Inventory</CardTitle>
-            <CardDescription>
-              A complete list of gym equipment
-            </CardDescription>
+            <CardDescription>All gym equipment items</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -249,7 +168,7 @@ const Equipment: React.FC = () => {
               </div>
               <div className="flex gap-2">
                 <select
-                  className="px-3 py-2 border rounded-md"
+                  className="px-3 py-2 border rounded-md text-sm"
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
                 >
@@ -258,9 +177,8 @@ const Equipment: React.FC = () => {
                     <option key={category} value={category}>{category}</option>
                   ))}
                 </select>
-                
                 <select
-                  className="px-3 py-2 border rounded-md"
+                  className="px-3 py-2 border rounded-md text-sm"
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
                 >
@@ -272,10 +190,10 @@ const Equipment: React.FC = () => {
                 </select>
               </div>
             </div>
-
+             
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gym-primary"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gym-primary" />
               </div>
             ) : filteredEquipment.length > 0 ? (
               <div className="rounded-md border">
@@ -284,56 +202,78 @@ const Equipment: React.FC = () => {
                     <TableRow>
                       <TableHead>Name</TableHead>
                       <TableHead>Category</TableHead>
-                      <TableHead>Quantity</TableHead>
+                      <TableHead>Qty</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Last Maintenance</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEquipment.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <div className="font-medium">{item.name}</div>
-                          <div className="text-sm text-muted-foreground">{item.description}</div>
-                        </TableCell>
-                        <TableCell>{item.category}</TableCell>
-                        <TableCell>{item.quantity}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant="outline"
-                            className={getStatusLabel(item.status).className}
-                          >
-                            {getStatusLabel(item.status).label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {item.maintenance_date ? new Date(item.maintenance_date).toLocaleDateString() : 'N/A'}
-                        </TableCell>
-                        <TableCell className="text-right space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => navigate(`/admin/equipment/${item.id}`)}
-                          >
-                            View
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => navigate(`/admin/equipment/${item.id}/edit`)}
-                          >
-                            Edit
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {filteredEquipment.map((item) => {
+                      const status = getStatusBadge(item.status);
+                      return (
+                        <TableRow key={item.id}>
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell>{item.category}</TableCell>
+                          <TableCell>{item.quantity}</TableCell>
+                          <TableCell>
+                            <Badge className={status.className}>{status.label}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {item.maintenance_date ? 
+                              new Date(item.maintenance_date).toLocaleDateString() : 'N/A'}
+                          </TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => navigate(`/admin/equipment/${item.id}`)}
+                            >
+                              View
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => navigate(`/admin/equipment/${item.id}/edit`)}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-500 hover:text-red-700"
+                              onClick={() => handleDelete(item.id)}
+                            >
+                              Delete
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
             ) : (
               <div className="text-center py-10">
-                <p className="text-muted-foreground">No equipment found.</p>
+                <p className="text-muted-foreground mb-4">
+                  {equipment.length === 0 ? 'No equipment found in system' : 'No matching equipment found'}
+                </p>
+                <div className="flex justify-center gap-2">
+                  <Button 
+                    variant="outline"
+                    onClick={fetchEquipment}
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh List
+                  </Button>
+                  <Button 
+                    variant="default"
+                    onClick={() => navigate('/admin/equipment/new')}
+                  >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Equipment
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>
