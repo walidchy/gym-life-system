@@ -12,6 +12,15 @@ export interface User {
   is_verified: boolean;
   created_at: string;
   updated_at: string;
+  memberProfile?: {
+    phone?: string;
+  };
+  trainerProfile?: {
+    phone?: string;
+  };
+  adminProfile?: {
+    phone?: string;
+  };
 }
 
 export interface Member {
@@ -27,6 +36,9 @@ export interface Member {
     name: string;
     is_active: boolean;
     end_date: string;
+    membership_plan?: {
+      name: string;
+    };
   }[];
   created_at: string;
   updated_at: string;
@@ -40,7 +52,6 @@ export interface Trainer {
   certifications?: string[];
   phone?: string;
 }
-
 
 export interface Admin {
   user_id: number;
@@ -72,6 +83,14 @@ export interface Membership {
   category?: string;
   type?: string;
   trainer?: { name: string };
+  end_date: string;
+  start_date: string;
+  membership_plan?: {
+    name: string;
+    description?: string;
+    duration_days: number;
+    features?: string[];
+  };
 }
 
 export interface Activity {
@@ -85,8 +104,11 @@ export interface Activity {
   duration_minutes: number;
   max_participants: number;
   location: string;
-  equipment_needed?: string[];
+  equipment_needed?: string[] | string;
   schedules?: ActivitySchedule[];
+  trainer?: { 
+    name: string 
+  };
 }
 
 export interface ActivitySchedule {

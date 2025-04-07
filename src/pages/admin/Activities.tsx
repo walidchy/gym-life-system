@@ -93,14 +93,22 @@ const Activities: React.FC = () => {
     return Array.from(levels);
   };
 
-  const parseEquipment = (equipment: string) => {
+  const parseEquipment = (equipment: string | string[] | undefined): string => {
+    if (!equipment) return '';
+    
+    if (Array.isArray(equipment)) {
+      return equipment.join(', ');
+    }
+    
     try {
-      return JSON.parse(equipment).join(', ');
+      const parsed = JSON.parse(equipment);
+      return Array.isArray(parsed) ? parsed.join(', ') : equipment.toString();
     } catch {
-      return equipment;
+      return equipment.toString();
     }
   };
 
+  
   return (
     <MainLayout>
       <div className="space-y-6">
