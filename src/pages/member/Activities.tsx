@@ -1,33 +1,86 @@
-
-import React, { useState } from 'react';
-import { Calendar, Search } from 'lucide-react';
-import MainLayout from '@/components/layout/MainLayout';
+import React, { useState, useEffect } from 'react';
+import { PlusCircle, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { useQuery } from '@tanstack/react-query';
-import { getUpcomingActivities } from '@/services/activities';
+import { toast } from 'sonner';
+import { Activity } from '@/types';
+import { getActivities, deleteActivity } from '@/services/activities';
+import { useNavigate } from 'react-router-dom';
+import MainLayout from '@/components/layout/MainLayout';
 
-const MemberActivities: React.FC = () => {
+const Activities: React.FC = () => {
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
+  const [difficultyFilter, setDifficultyFilter] = useState<string>('');
+  const navigate = useNavigate();
 
-  // Fetch activities with React Query
-  const { data: activities = [], isLoading } = useQuery({
-    queryKey: ['activities', 'upcoming'],
-    queryFn: getUpcomingActivities
-  });
+  useEffect(() => {
+    fetchActivities();
+  }, [categoryFilter, difficultyFilter]);
+
+  const fetchActivities = async () => {
+    setIsLoading(true);
+    try {
+      const queryParams = new URLSearchParams();
+      if (categoryFilter) queryParams.append('category', categoryFilter);
+      if (difficultyFilter) queryParams.append('difficulty_level', difficultyFilter);
+      
+      const data = await getActivities(queryParams.toString());
+      setActivities(data || []);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+      toast.error('Failed to load activities');
+      setActivities([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteActivity = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this activity?')) {
+      try {
+        await deleteActivity(id);
+        setActivities(prev => prev.filter(activity => activity.id !== id));
+        toast.success('Activity deleted successfully');
+      } catch (error) {
+        console.error('Error deleting activity:', error);
+        toast.error('Failed to delete activity. It may have existing bookings.');
+      }
+    }
+  };
 
   const filteredActivities = activities.filter(activity => {
-    const matchesSearch = 
-      activity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      activity.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    const matchesCategory = categoryFilter === '' || 
-      activity.category === categoryFilter;
-    
-    return matchesSearch && matchesCategory;
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      activity.name.toLowerCase().includes(searchLower) ||
+      activity.description.toLowerCase().includes(searchLower) ||
+      activity.location.toLowerCase().includes(searchLower) ||
+      (activity.trainer?.name || '').toLowerCase().includes(searchLower)
+    );
   });
 
   const getCategories = () => {
@@ -35,24 +88,46 @@ const MemberActivities: React.FC = () => {
     return Array.from(categories);
   };
 
+  const getDifficultyLevels = () => {
+    const levels = new Set(activities.map(activity => activity.difficulty_level));
+    return Array.from(levels);
+  };
+
+  const parseEquipment = (equipment: string | string[] | undefined): string => {
+    if (!equipment) return '';
+    
+    if (Array.isArray(equipment)) {
+      return equipment.join(', ');
+    }
+    
+    try {
+      const parsed = JSON.parse(equipment);
+      return Array.isArray(parsed) ? parsed.join(', ') : equipment.toString();
+    } catch {
+      return equipment.toString();
+    }
+  };
+
+  
   return (
     <MainLayout>
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Gym Activities</h1>
-            <p className="text-muted-foreground">Browse and book activities at our gym</p>
+            <h1 className="text-2xl font-bold tracking-tight">Activities Management</h1>
+            <p className="text-muted-foreground">Manage all gym activities and classes</p>
           </div>
-          <Button className="mt-4 md:mt-0" asChild>
-            <a href="#classes">View Schedule</a>
+          <Button className="mt-4 md:mt-0" onClick={() => navigate('/admin/activities/new')}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            New Activity
           </Button>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Available Activities</CardTitle>
+            <CardTitle>All Activities</CardTitle>
             <CardDescription>
-              Browse our selection of fitness classes and activities
+              A list of all activities offered at the gym
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -66,24 +141,50 @@ const MemberActivities: React.FC = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button 
-                  variant={categoryFilter === '' ? 'default' : 'outline'} 
-                  onClick={() => setCategoryFilter('')}
-                  size="sm"
-                >
-                  All
-                </Button>
-                {getCategories().map(category => (
-                  <Button 
-                    key={category}
-                    variant={categoryFilter === category ? 'default' : 'outline'} 
-                    onClick={() => setCategoryFilter(category)}
-                    size="sm"
-                  >
-                    {category}
-                  </Button>
-                ))}
+              <div className="flex gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center">
+                      <Filter className="h-4 w-4 mr-2" />
+                      Category
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => setCategoryFilter('')}>
+                      All Categories
+                    </DropdownMenuItem>
+                    {getCategories().map(category => (
+                      <DropdownMenuItem 
+                        key={category} 
+                        onClick={() => setCategoryFilter(category)}
+                      >
+                        {category}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center">
+                      <Filter className="h-4 w-4 mr-2" />
+                      Difficulty
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => setDifficultyFilter('')}>
+                      All Levels
+                    </DropdownMenuItem>
+                    {getDifficultyLevels().map(level => (
+                      <DropdownMenuItem 
+                        key={level} 
+                        onClick={() => setDifficultyFilter(level)}
+                      >
+                        {level}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
@@ -92,46 +193,78 @@ const MemberActivities: React.FC = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gym-primary"></div>
               </div>
             ) : filteredActivities.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredActivities.map((activity) => (
-                  <Card key={activity.id} className="overflow-hidden">
-                    <div className="aspect-video bg-gray-100 relative">
-                      {activity.location ? (
-                        <img 
-                          src={`/images/${activity.category.toLowerCase()}.jpg`} 
-                          alt={activity.name} 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                          <Calendar className="h-10 w-10 text-gray-400" />
-                        </div>
-                      )}
-                      <Badge className="absolute top-2 right-2">
-                        {activity.category}
-                      </Badge>
-                    </div>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-lg mb-1">{activity.name}</h3>
-                      <p className="text-sm text-muted-foreground mb-3">
-                        {activity.description?.substring(0, 100)}
-                        {activity.description && activity.description.length > 100 ? '...' : ''}
-                      </p>
-                      <div className="flex justify-between items-center">
-                        <div className="text-sm text-muted-foreground">
-                          {activity.duration_minutes} mins • {activity.difficulty_level}
-                        </div>
-                        <Button size="sm" asChild>
-                          <a href={`/activities/${activity.id}`}>Details</a>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Difficulty</TableHead>
+                      <TableHead>Duration</TableHead>
+                      <TableHead>Location</TableHead>
+                      <TableHead>Equipment</TableHead>
+                      <TableHead>Trainer</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredActivities.map((activity) => (
+                      <TableRow key={activity.id}>
+                        <TableCell className="font-medium">{activity.name}</TableCell>
+                        <TableCell>{activity.category}</TableCell>
+                        <TableCell>
+                          <Badge 
+                            variant={
+                              activity.difficulty_level === 'beginner' ? 'outline' :
+                              activity.difficulty_level === 'intermediate' ? 'secondary' : 'destructive'
+                            }
+                          >
+                            {activity.difficulty_level}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{activity.duration_minutes} min</TableCell>
+                        <TableCell>{activity.location}</TableCell>
+                        <TableCell>{parseEquipment(activity.equipment_needed)}</TableCell>
+                        <TableCell>{activity.trainer?.name || 'No trainer assigned'}</TableCell>
+                        <TableCell className="text-right space-x-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => navigate(`/admin/activities/${activity.id}`)}
+                          >
+                            View
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => navigate(`/admin/activities/${activity.id}/edit`)}
+                          >
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-500 hover:text-red-700"
+                            onClick={() => handleDeleteActivity(activity.id)}
+                          >
+                            Delete
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
             ) : (
               <div className="text-center py-10">
                 <p className="text-muted-foreground">No activities found.</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={fetchActivities}
+                >
+                  Refresh List
+                </Button>
               </div>
             )}
           </CardContent>
@@ -141,4 +274,4 @@ const MemberActivities: React.FC = () => {
   );
 };
 
-export default MemberActivities;
+export default Activities;
