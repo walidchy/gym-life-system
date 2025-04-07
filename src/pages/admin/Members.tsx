@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Search, Filter } from 'lucide-react';
+import { PlusCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -20,120 +19,68 @@ import {
 } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
-import { User, Member } from '@/types';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
-// This would be a real API service in production
-const mockMembers = [
-  {
-    user_id: 1,
-    user: { 
-      id: 1, 
-      name: 'Jane Cooper', 
-      email: 'jane@example.com', 
-      role: 'member' as const, 
-      is_verified: true,
-      avatar: 'https://ui-avatars.com/api/?name=Jane+Cooper'
-    },
-    birth_date: '1990-05-15',
-    gender: 'female' as const,
-    address: '123 Main St, City',
-    phone: '(555) 123-4567',
-    membership: { name: 'Premium', end_date: '2024-12-31', is_active: true }
-  },
-  {
-    user_id: 2,
-    user: { 
-      id: 2, 
-      name: 'John Smith', 
-      email: 'john@example.com', 
-      role: 'member' as const, 
-      is_verified: true,
-      avatar: 'https://ui-avatars.com/api/?name=John+Smith'
-    },
-    birth_date: '1985-10-20',
-    gender: 'male' as const,
-    address: '456 Oak St, Town',
-    phone: '(555) 987-6543',
-    membership: { name: 'Basic', end_date: '2024-06-30', is_active: true }
-  },
-  {
-    user_id: 3,
-    user: { 
-      id: 3, 
-      name: 'Emily Johnson', 
-      email: 'emily@example.com', 
-      role: 'member' as const, 
-      is_verified: false,
-      avatar: 'https://ui-avatars.com/api/?name=Emily+Johnson'
-    },
-    birth_date: '1993-02-10',
-    gender: 'female' as const,
-    address: '789 Pine St, Village',
-    phone: '(555) 456-7890',
-    membership: { name: 'Standard', end_date: '2024-03-15', is_active: false }
-  },
-];
-
-interface MemberWithUser extends Member {
-  user: User;
-  membership?: {
-    name: string;
-    end_date: string;
-    is_active: boolean;
-  };
-}
+import { getMembers, deleteMember } from '@/services/members';
+import { Member, Membership } from '@/types';
 
 const Members: React.FC = () => {
-  const [members, setMembers] = useState<MemberWithUser[]>([]);
+  const [members, setMembers] = useState<Member[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [membershipFilter, setMembershipFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    // In production, this would fetch from an API
     const fetchMembers = async () => {
       setIsLoading(true);
       try {
-        // Simulate API call
-        setTimeout(() => {
-          setMembers(mockMembers as MemberWithUser[]);
-          setIsLoading(false);
-        }, 1000);
+        const data = await getMembers();
+        setMembers(data);
       } catch (error) {
         console.error('Error fetching members:', error);
         toast.error('Failed to load members');
+        setMembers([]);
+      } finally {
         setIsLoading(false);
       }
     };
-
+    
     fetchMembers();
   }, []);
 
+  const handleDeleteMember = async (memberId: number) => {
+    if (window.confirm('Are you sure you want to delete this member?')) {
+      try {
+        await deleteMember(memberId);
+        setMembers(prev => prev.filter(member => member.id !== memberId));
+        toast.success('Member deleted successfully');
+      } catch (error) {
+        console.error('Error deleting member:', error);
+        toast.error('Failed to delete member. They may have existing bookings or payments.');
+      }
+    }
+  };
+
   const filteredMembers = members.filter(member => {
     const matchesSearch = 
-      member.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      member.user.email.toLowerCase().includes(searchQuery.toLowerCase());
+      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.email.toLowerCase().includes(searchQuery.toLowerCase());
     
-    const matchesMembership = membershipFilter === '' || 
-      (member.membership && member.membership.name === membershipFilter);
-    
+    const hasActiveMembership = member.memberships?.some(m => m.is_active);
     const matchesStatus = statusFilter === '' || 
-      (statusFilter === 'active' && member.membership?.is_active) ||
-      (statusFilter === 'inactive' && !member.membership?.is_active);
+      (statusFilter === 'active' && hasActiveMembership) ||
+      (statusFilter === 'inactive' && !hasActiveMembership);
     
-    return matchesSearch && matchesMembership && matchesStatus;
+    return matchesSearch && matchesStatus;
   });
 
-  const getMembershipTypes = () => {
-    const types = new Set(members
-      .filter(member => member.membership)
-      .map(member => member.membership!.name));
-    return Array.from(types);
+  const getLatestMembership = (memberships?: Membership[]) => {
+    if (!memberships || memberships.length === 0) return null;
+    return [...memberships].sort((a, b) => 
+      new Date(b.end_date).getTime() - new Date(a.end_date).getTime()
+    )[0];
   };
 
   return (
@@ -153,9 +100,7 @@ const Members: React.FC = () => {
         <Card>
           <CardHeader>
             <CardTitle>All Members</CardTitle>
-            <CardDescription>
-              A list of all gym members
-            </CardDescription>
+            <CardDescription>A list of all gym members</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -197,7 +142,7 @@ const Members: React.FC = () => {
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gym-primary"></div>
               </div>
-            ) : members.length > 0 ? (
+            ) : filteredMembers.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -206,75 +151,88 @@ const Members: React.FC = () => {
                       <TableHead>Membership</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Phone</TableHead>
-                      <TableHead>Last Visit</TableHead>
+                      <TableHead>Membership End</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {members
-                      .filter(member => {
-                        const matchesSearch = 
-                          member.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          member.user.email.toLowerCase().includes(searchQuery.toLowerCase());
-                        
-                        const matchesMembership = membershipFilter === '' || 
-                          (member.membership && member.membership.name === membershipFilter);
-                        
-                        const matchesStatus = statusFilter === '' || 
-                          (statusFilter === 'active' && member.membership?.is_active) ||
-                          (statusFilter === 'inactive' && !member.membership?.is_active);
-                        
-                        return matchesSearch && matchesMembership && matchesStatus;
-                      })
-                      .map((member) => (
-                      <TableRow key={member.user_id}>
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarImage src={member.user.avatar} alt={member.user.name} />
-                              <AvatarFallback>{member.user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium">{member.user.name}</div>
-                              <div className="text-sm text-muted-foreground">{member.user.email}</div>
+                    {filteredMembers.map((member) => {
+                      const latestMembership = getLatestMembership(member.memberships);
+                      return (
+                        <TableRow key={member.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar>
+                                <AvatarImage src={member.avatar} alt={member.name} />
+                                <AvatarFallback>
+                                  {member.name.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-medium">{member.name}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {member.email}
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{member.membership?.name || 'No membership'}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={member.membership?.is_active ? 'default' : 'secondary'}
-                            className={member.membership?.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
-                          >
-                            {member.membership?.is_active ? 'Active' : 'Inactive'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{member.phone || 'Not provided'}</TableCell>
-                        <TableCell>3 days ago</TableCell>
-                        <TableCell className="text-right space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => navigate(`/admin/members/${member.user_id}`)}
-                          >
-                            View
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => navigate(`/admin/members/${member.user_id}/edit`)}
-                          >
-                            Edit
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                          </TableCell>
+                          <TableCell>
+                            {latestMembership?.membership_plan?.name || 'No membership'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={latestMembership?.is_active ? 'default' : 'secondary'}
+                              className={latestMembership?.is_active ? 
+                                'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
+                            >
+                              {latestMembership?.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{member.phone || 'Not provided'}</TableCell>
+                          <TableCell>
+                            {latestMembership?.end_date ? 
+                              new Date(latestMembership.end_date).toLocaleDateString() : '-'}
+                          </TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => navigate(`/admin/members/${member.id}`)}
+                            >
+                              View
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => navigate(`/admin/members/${member.id}/edit`)}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-500 hover:text-red-700"
+                              onClick={() => handleDeleteMember(member.id)}
+                            >
+                              Delete
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
             ) : (
               <div className="text-center py-10">
                 <p className="text-muted-foreground">No members found.</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh List
+                </Button>
               </div>
             )}
           </CardContent>
