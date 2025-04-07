@@ -41,7 +41,7 @@ const MemberBookings: React.FC = () => {
     const matchesStatus = 
       (activeTab === 'upcoming' && booking.status === 'upcoming') ||
       (activeTab === 'past' && booking.status === 'completed') ||
-      (activeTab === 'cancelled' && booking.status === 'cancelled');
+      (activeTab === 'cancelled' && booking.status === 'canceled');
     
     return matchesSearch && matchesStatus;
   });
@@ -61,11 +61,11 @@ const MemberBookings: React.FC = () => {
   const handleCancelBooking = (bookingId: number) => {
     // Would send API request to cancel booking
     toast.success('Booking cancelled successfully');
-    // Update UI to show booking as cancelled
+    // Update UI to show booking as canceled
     setBookings(prevBookings => 
       prevBookings.map(booking => 
         booking.id === bookingId 
-          ? { ...booking, status: 'cancelled' } 
+          ? { ...booking, status: 'canceled' } 
           : booking
       )
     );

@@ -110,9 +110,9 @@ const MemberActivities: React.FC = () => {
                 {filteredActivities.map((activity) => (
                   <Card key={activity.id} className="overflow-hidden">
                     <div className="aspect-video bg-gray-100 relative">
-                      {activity.image_url ? (
+                      {activity.location ? (
                         <img 
-                          src={activity.image_url} 
+                          src={`/images/${activity.category.toLowerCase()}.jpg`} 
                           alt={activity.name} 
                           className="w-full h-full object-cover"
                         />
