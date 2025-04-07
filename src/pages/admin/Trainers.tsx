@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Search, Filter } from 'lucide-react';
+import { PlusCircle, Filter, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -18,117 +17,83 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
-import { User, Trainer } from '@/types';
+import { User } from '@/types';
+import { getTrainers, deleteTrainer } from '@/services/trainers';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-
-// This would be a real API service in production
-const mockTrainers = [
-  {
-    user_id: 4,
-    user: { 
-      id: 4, 
-      name: 'Alex Bennett', 
-      email: 'alex@example.com', 
-      role: 'trainer' as const, 
-      is_verified: true,
-      avatar: 'https://ui-avatars.com/api/?name=Alex+Bennett'
-    },
-    specialization: 'Strength Training',
-    bio: 'Certified personal trainer with 5+ years experience in strength training and muscle building.',
-    experience_years: 5,
-    certifications: ['NASM CPT', 'ACE', 'Strength & Conditioning Specialist'],
-    phone: '(555) 123-7890',
-    active_clients: 12
-  },
-  {
-    user_id: 5,
-    user: { 
-      id: 5, 
-      name: 'Sarah Miller', 
-      email: 'sarah@example.com', 
-      role: 'trainer' as const, 
-      is_verified: true,
-      avatar: 'https://ui-avatars.com/api/?name=Sarah+Miller'
-    },
-    specialization: 'Yoga & Pilates',
-    bio: 'Experienced yoga instructor specializing in vinyasa flow and power yoga for all levels.',
-    experience_years: 8,
-    certifications: ['RYT 200', 'Pilates Certification'],
-    phone: '(555) 234-5678',
-    active_clients: 15
-  },
-  {
-    user_id: 6,
-    user: { 
-      id: 6, 
-      name: 'Michael Chen', 
-      email: 'michael@example.com', 
-      role: 'trainer' as const, 
-      is_verified: false,
-      avatar: 'https://ui-avatars.com/api/?name=Michael+Chen'
-    },
-    specialization: 'Cardio & HIIT',
-    bio: 'Fitness coach focused on high-intensity workouts and functional training.',
-    experience_years: 3,
-    certifications: ['ACSM', 'CrossFit Level 1'],
-    phone: '(555) 345-6789',
-    active_clients: 8
-  },
-];
-
-interface TrainerWithUser extends Trainer {
-  user: User;
-  active_clients?: number;
-}
 
 const Trainers: React.FC = () => {
-  const [trainers, setTrainers] = useState<TrainerWithUser[]>([]);
+  const [trainers, setTrainers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [specializationFilter, setSpecializationFilter] = useState<string>('');
   const navigate = useNavigate();
 
   useEffect(() => {
-    // In production, this would fetch from an API
-    const fetchTrainers = async () => {
-      setIsLoading(true);
-      try {
-        // Simulate API call
-        setTimeout(() => {
-          setTrainers(mockTrainers as TrainerWithUser[]);
-          setIsLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error('Error fetching trainers:', error);
-        toast.error('Failed to load trainers');
-        setIsLoading(false);
-      }
-    };
-
     fetchTrainers();
-  }, []);
+  }, [specializationFilter]);
+
+  const fetchTrainers = async () => {
+    setIsLoading(true);
+    try {
+      const queryParams = new URLSearchParams();
+      if (specializationFilter) queryParams.append('specialization', specializationFilter);
+      
+      const response = await getTrainers(queryParams.toString());
+      // Ensure we're properly extracting the array from the response
+      setTrainers(response?.data || []);
+    } catch (error) {
+      console.error('Error fetching trainers:', error);
+      toast.error('Failed to load trainers');
+      setTrainers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteTrainer = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this trainer?')) {
+      try {
+        await deleteTrainer(id);
+        setTrainers(prev => prev.filter(trainer => trainer.id !== id));
+        toast.success('Trainer deleted successfully');
+      } catch (error) {
+        console.error('Error deleting trainer:', error);
+        toast.error('Failed to delete trainer. They may have associated activities.');
+      }
+    }
+  };
 
   const filteredTrainers = trainers.filter(trainer => {
-    const matchesSearch = 
-      trainer.user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      trainer.user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (trainer.specialization && trainer.specialization.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    const matchesSpecialization = specializationFilter === '' || 
-      (trainer.specialization && trainer.specialization === specializationFilter);
-    
-    return matchesSearch && matchesSpecialization;
+    const searchLower = searchQuery.toLowerCase();
+    return (
+      trainer.name.toLowerCase().includes(searchLower) ||
+      trainer.email.toLowerCase().includes(searchLower) ||
+      trainer.trainer?.specialization?.toLowerCase().includes(searchLower) ||
+      trainer.trainer?.bio?.toLowerCase().includes(searchLower)
+    );
   });
 
   const getSpecializations = () => {
-    const specs = new Set(trainers
-      .filter(trainer => trainer.specialization)
-      .map(trainer => trainer.specialization!));
-    return Array.from(specs);
+    const specializations = new Set(
+      trainers.map(trainer => trainer.trainer?.specialization).filter(Boolean)
+    );
+    return Array.from(specializations);
+  };
+
+  const parseCertifications = (certifications: string) => {
+    try {
+      return JSON.parse(certifications).join(', ');
+    } catch {
+      return certifications;
+    }
   };
 
   return (
@@ -137,11 +102,11 @@ const Trainers: React.FC = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Trainers Management</h1>
-            <p className="text-muted-foreground">Manage gym trainers and their profiles</p>
+            <p className="text-muted-foreground">Manage all gym trainers and their profiles</p>
           </div>
           <Button className="mt-4 md:mt-0" onClick={() => navigate('/admin/trainers/new')}>
             <PlusCircle className="h-4 w-4 mr-2" />
-            Add Trainer
+            New Trainer
           </Button>
         </div>
 
@@ -149,7 +114,7 @@ const Trainers: React.FC = () => {
           <CardHeader>
             <CardTitle>All Trainers</CardTitle>
             <CardDescription>
-              A list of all gym trainers and instructors
+              A list of all certified trainers working at the gym
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -163,17 +128,28 @@ const Trainers: React.FC = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div className="flex">
-                <select
-                  className="px-3 py-2 border rounded-md"
-                  value={specializationFilter}
-                  onChange={(e) => setSpecializationFilter(e.target.value)}
-                >
-                  <option value="">All Specializations</option>
-                  {getSpecializations().map(spec => (
-                    <option key={spec} value={spec}>{spec}</option>
-                  ))}
-                </select>
+              <div className="flex gap-2">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center">
+                      <Filter className="h-4 w-4 mr-2" />
+                      Specialization
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={() => setSpecializationFilter('')}>
+                      All Specializations
+                    </DropdownMenuItem>
+                    {getSpecializations().map(specialization => (
+                      <DropdownMenuItem 
+                        key={specialization} 
+                        onClick={() => setSpecializationFilter(specialization)}
+                      >
+                        {specialization}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
 
@@ -186,54 +162,51 @@ const Trainers: React.FC = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Trainer</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
                       <TableHead>Specialization</TableHead>
                       <TableHead>Experience</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Active Clients</TableHead>
+                      <TableHead>Certifications</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Active Members</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredTrainers.map((trainer) => (
-                      <TableRow key={trainer.user_id}>
+                      <TableRow key={trainer.id}>
+                        <TableCell className="font-medium">{trainer.name}</TableCell>
+                        <TableCell>{trainer.email}</TableCell>
+                        <TableCell>{trainer.trainer?.specialization || '-'}</TableCell>
+                        <TableCell>{trainer.trainer?.experience_years} years</TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar>
-                              <AvatarImage src={trainer.user.avatar} alt={trainer.user.name} />
-                              <AvatarFallback>{trainer.user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium">{trainer.user.name}</div>
-                              <div className="text-sm text-muted-foreground">{trainer.user.email}</div>
-                            </div>
-                          </div>
+                          {trainer.trainer?.certifications ? 
+                            parseCertifications(trainer.trainer.certifications) : '-'}
                         </TableCell>
-                        <TableCell>{trainer.specialization || 'Not specified'}</TableCell>
-                        <TableCell>{trainer.experience_years} years</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={trainer.user.is_verified ? 'default' : 'secondary'}
-                            className={trainer.user.is_verified ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}
-                          >
-                            {trainer.user.is_verified ? 'Active' : 'Pending'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{trainer.active_clients || 0}</TableCell>
+                        <TableCell>{trainer.trainer?.phone || '-'}</TableCell>
+                        <TableCell>{trainer.active_members || 0}</TableCell>
                         <TableCell className="text-right space-x-2">
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            onClick={() => navigate(`/admin/trainers/${trainer.user_id}`)}
+                            onClick={() => navigate(`/admin/trainers/${trainer.id}`)}
                           >
                             View
                           </Button>
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            onClick={() => navigate(`/admin/trainers/${trainer.user_id}/edit`)}
+                            onClick={() => navigate(`/admin/trainers/${trainer.id}/edit`)}
                           >
                             Edit
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="text-red-500 hover:text-red-700"
+                            onClick={() => handleDeleteTrainer(trainer.id)}
+                          >
+                            Delete
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -244,6 +217,13 @@ const Trainers: React.FC = () => {
             ) : (
               <div className="text-center py-10">
                 <p className="text-muted-foreground">No trainers found.</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={fetchTrainers}
+                >
+                  Refresh List
+                </Button>
               </div>
             )}
           </CardContent>
