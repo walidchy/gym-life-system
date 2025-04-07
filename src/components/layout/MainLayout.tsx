@@ -14,7 +14,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="flex min-h-screen bg-gray-50">
       {isAuthenticated && <Sidebar />}
-      <div className="flex flex-col flex-1 w-full overflow-hidden">
+      <div className="flex flex-col flex-1 w-full">
         <Navbar />
         <main className="flex-1 overflow-y-auto bg-gray-50">
           {children}

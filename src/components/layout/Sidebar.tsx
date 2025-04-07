@@ -65,7 +65,7 @@ const Sidebar: React.FC = () => {
   };
 
   return (
-    <div className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 border-r bg-white">
+    <div className="hidden md:flex md:flex-col md:w-64 md:fixed md:inset-y-0 border-r bg-white shadow-sm z-10">
       <div className="flex flex-col h-full">
         <div className="flex items-center h-16 px-4 border-b bg-gym-secondary text-white">
           <Link to="/" className="text-xl font-bold">
@@ -73,7 +73,7 @@ const Sidebar: React.FC = () => {
           </Link>
         </div>
         <div className="flex flex-col flex-1 overflow-y-auto">
-          <nav className="flex-1 px-2 py-4 space-y-1">
+          <nav className="flex-1 px-3 py-5 space-y-1.5">
             {getNavigationLinks().map((item) => (
               <Link
                 key={item.name}
@@ -82,12 +82,12 @@ const Sidebar: React.FC = () => {
                   isActive(item.path)
                     ? 'bg-gray-100 text-gym-secondary font-medium'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gym-secondary',
-                  'group flex items-center px-2 py-2 rounded-md'
+                  'group flex items-center px-3 py-2.5 rounded-md transition-all duration-200'
                 )}
               >
                 <div className={cn(
                   isActive(item.path) ? 'text-gym-secondary' : 'text-gray-400 group-hover:text-gym-secondary',
-                  'mr-3'
+                  'mr-3 transition-colors'
                 )}>
                   {item.icon}
                 </div>
@@ -102,8 +102,8 @@ const Sidebar: React.FC = () => {
             ))}
           </nav>
           
-          <div className="p-4 border-t">
-            <div className="bg-gray-50 rounded-lg p-4">
+          <div className="p-4 border-t mt-auto">
+            <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
               <h3 className="font-medium text-gray-900 flex items-center">
                 <Heart className="h-5 w-5 text-gym-primary mr-2" />
                 Health Tips
@@ -111,7 +111,7 @@ const Sidebar: React.FC = () => {
               <p className="mt-1 text-sm text-gray-500">
                 Stay hydrated! Aim to drink at least 8 glasses of water daily for optimal performance.
               </p>
-              <a href="#" className="mt-2 text-xs text-gym-secondary flex items-center">
+              <a href="#" className="mt-2 text-xs text-gym-secondary flex items-center hover:underline">
                 More tips
                 <ChevronRight className="ml-1 h-3 w-3" />
               </a>
