@@ -11,7 +11,7 @@ import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
-import Profile from "./pages/Profile";
+import MemberProfile from "./pages/member/profile";
 
 // Admin pages
 import Members from "./pages/admin/Members";
@@ -25,7 +25,6 @@ import AdminProfile from "./pages/admin/Profile";
 import MemberActivities from "./pages/member/Activities";
 import MemberBookings from "./pages/member/Bookings";
 import MemberMembership from "./pages/member/Membership";
-import MemberProfile from "./pages/member/profile";
 
 // Trainer pages
 import TrainerProfile from "./pages/trainer/Profile";
@@ -47,7 +46,7 @@ const App = () => {
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/profile" element={<Profile />} />
+              <Route path="/profile" element={<MemberProfile />} />
               
               {/* Admin routes */}
               <Route path="/admin/members" element={<Members />} />
