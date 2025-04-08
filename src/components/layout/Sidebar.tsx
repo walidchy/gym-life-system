@@ -28,7 +28,7 @@ const Sidebar: React.FC = () => {
     { name: 'Activities', path: '/activities', icon: <Dumbbell className="h-5 w-5" /> },
     { name: 'My Bookings', path: '/bookings', icon: <Calendar className="h-5 w-5" /> },
     { name: 'Membership', path: '/membership', icon: <CreditCard className="h-5 w-5" /> },
-    { name: 'My Profile', path: '/profile', icon: <User className="h-5 w-5" /> },
+    { name: 'My Profile', path: '/member/profile', icon: <User className="h-5 w-5" /> },
   ];
   
   const trainerLinks = [
@@ -36,7 +36,7 @@ const Sidebar: React.FC = () => {
     { name: 'My Activities', path: '/trainer/activities', icon: <Dumbbell className="h-5 w-5" /> },
     { name: 'My Schedule', path: '/trainer/schedule', icon: <Clock className="h-5 w-5" /> },
     { name: 'My Clients', path: '/trainer/clients', icon: <Users className="h-5 w-5" /> },
-    { name: 'My Profile', path: '/profile', icon: <User className="h-5 w-5" /> },
+    { name: 'My Profile', path: '/trainer/profile', icon: <User className="h-5 w-5" /> },
   ];
   
   const adminLinks = [
@@ -46,7 +46,7 @@ const Sidebar: React.FC = () => {
     { name: 'Activities', path: '/admin/activities', icon: <Dumbbell className="h-5 w-5" /> },
     { name: 'Memberships', path: '/admin/memberships', icon: <CreditCard className="h-5 w-5" /> },
     { name: 'Equipment', path: '/admin/equipment', icon: <Dumbbell className="h-5 w-5" /> },
-    { name: 'My Profile', path: '/profile', icon: <User className="h-5 w-5" /> },
+    { name: 'My Profile', path: '/admin/profile', icon: <User className="h-5 w-5" /> },
   ];
   
   const getNavigationLinks = () => {

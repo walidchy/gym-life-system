@@ -19,11 +19,16 @@ import Trainers from "./pages/admin/Trainers";
 import Activities from "./pages/admin/Activities";
 import Memberships from "./pages/admin/Memberships";
 import Equipment from "./pages/admin/Equipment";
+import AdminProfile from "./pages/admin/Profile";
 
 // Member pages
 import MemberActivities from "./pages/member/Activities";
 import MemberBookings from "./pages/member/Bookings";
 import MemberMembership from "./pages/member/Membership";
+import MemberProfile from "./pages/member/profile";
+
+// Trainer pages
+import TrainerProfile from "./pages/trainer/Profile";
 
 const App = () => {
   // Create a new QueryClient instance inside the component
@@ -50,11 +55,16 @@ const App = () => {
               <Route path="/admin/activities" element={<Activities />} />
               <Route path="/admin/memberships" element={<Memberships />} />
               <Route path="/admin/equipment" element={<Equipment />} />
+              <Route path="/admin/profile" element={<AdminProfile />} />
               
               {/* Member routes */}
               <Route path="/activities" element={<MemberActivities />} />
               <Route path="/bookings" element={<MemberBookings />} />
               <Route path="/membership" element={<MemberMembership />} />
+              <Route path="/member/profile" element={<MemberProfile />} />
+              
+              {/* Trainer routes */}
+              <Route path="/trainer/profile" element={<TrainerProfile />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

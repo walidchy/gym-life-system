@@ -17,9 +17,14 @@ export interface User {
   };
   trainerProfile?: {
     phone?: string;
+    specialization?: string;
+    certifications?: string[];
+    experience_years?: number;
   };
   adminProfile?: {
     phone?: string;
+    position?: string;
+    department?: string;
   };
 }
 
@@ -69,6 +74,7 @@ export interface MembershipPlan {
   features: string[];
   is_active: boolean;
 }
+
 export interface Schedule {
   id: number;
   activity_id: number;
@@ -80,13 +86,14 @@ export interface Schedule {
   created_at: string;
   updated_at: string;
 }
+
 export interface Membership {
   id: number;
   name: string;
   description: string;
   price: number;
   duration_days: number;
-  features: string[];  // This expects an array of strings after parsing
+  features: string[];
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -99,7 +106,7 @@ export interface Membership {
     name: string;
     description?: string;
     duration_days: number;
-    features?: string[];  // This field also needs to be handled if necessary
+    features?: string[];
   };
 }
 
@@ -137,7 +144,7 @@ export interface Booking {
   activity_id: number;
   activity?: Activity;
   activity_schedule_id?: number;
-  schedule?: Schedule; // <-- add this if it's returned by the API
+  schedule?: Schedule;
   date: string;
   status: 'upcoming' | 'completed' | 'canceled';
   cancellation_reason?: string;
