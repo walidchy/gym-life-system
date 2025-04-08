@@ -137,6 +137,15 @@ const Profile: React.FC = () => {
                     <Label htmlFor="email">Email</Label>
                     <Input id="email" value={user?.email || ''} disabled />
                   </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="role">Role</Label>
+                    <Input 
+                      id="role" 
+                      value={user?.role ? user.role.charAt(0).toUpperCase() + user.role.slice(1) : ''} 
+                      disabled 
+                    />
+                  </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="phone">Phone</Label>
