@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,6 +9,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { toast } from 'sonner';
 import AuthLayout from '../../components/layout/AuthLayout';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { InfoIcon } from 'lucide-react';
 import {
   Form,
   FormControl,
@@ -41,6 +44,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const { setUser } = useAuth();
+  const [showVerificationAlert, setShowVerificationAlert] = React.useState(false);
   
   const form = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -66,8 +70,13 @@ const Register: React.FC = () => {
       const response = await registerUser(userData);
       
       if (response && response.user) {
-        toast.success(response.message || 'Registration successful! Your account is pending verification.');
-        navigate('/login');
+        setShowVerificationAlert(true);
+        toast.success('Registration successful! Your account is pending verification.');
+        
+        // Redirect to login after 5 seconds
+        setTimeout(() => {
+          navigate('/login');
+        }, 5000);
       } else {
         console.error('Invalid response format:', response);
         toast.error('Registration failed. Please try again.');
@@ -80,6 +89,17 @@ const Register: React.FC = () => {
 
   return (
     <AuthLayout title="Create an account" subtitle="Join GymLife to start your fitness journey">
+      {showVerificationAlert && (
+        <Alert className="mb-6 bg-yellow-50 border-yellow-200">
+          <InfoIcon className="h-5 w-5 text-yellow-600" />
+          <AlertTitle className="text-yellow-800">Verification Required</AlertTitle>
+          <AlertDescription className="text-yellow-700">
+            Your account has been created successfully but requires verification by an administrator 
+            before you can log in. You will be redirected to the login page in 5 seconds.
+          </AlertDescription>
+        </Alert>
+      )}
+    
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
