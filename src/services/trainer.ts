@@ -1,6 +1,6 @@
 
 import api from './api';
-import { Activity, User, ApiResponse } from '@/types';
+import { Activity, User, ApiResponse, TrainerClient } from '@/types';
 
 export const getTrainerActivities = async (): Promise<ApiResponse<Activity[]>> => {
   try {
@@ -12,9 +12,9 @@ export const getTrainerActivities = async (): Promise<ApiResponse<Activity[]>> =
   }
 };
 
-export const getTrainerClients = async (): Promise<ApiResponse<User[]>> => {
+export const getTrainerClients = async (): Promise<ApiResponse<TrainerClient[]>> => {
   try {
-    const response = await api.get<ApiResponse<User[]>>('/trainer/clients');
+    const response = await api.get<ApiResponse<TrainerClient[]>>('/trainer/clients');
     return response.data;
   } catch (error) {
     console.error('Error fetching trainer clients:', error);
