@@ -11,7 +11,7 @@ import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
-import Profile from "./pages/admin/Profile";
+import Profile from "./pages/Profile";
 
 // Admin pages
 import Members from "./pages/admin/Members";
