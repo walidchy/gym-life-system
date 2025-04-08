@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
@@ -10,7 +11,8 @@ import {
   Clock, 
   Dumbbell, 
   ChevronRight, 
-  Heart
+  Heart,
+  Shield
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -46,6 +48,7 @@ const Sidebar: React.FC = () => {
     { name: 'Activities', path: '/admin/activities', icon: <Dumbbell className="h-5 w-5" /> },
     { name: 'Memberships', path: '/admin/memberships', icon: <CreditCard className="h-5 w-5" /> },
     { name: 'Equipment', path: '/admin/equipment', icon: <Dumbbell className="h-5 w-5" /> },
+    { name: 'Verifications', path: '/admin/verifications', icon: <Shield className="h-5 w-5" /> },
     { name: 'My Profile', path: '/admin/profile', icon: <User className="h-5 w-5" /> },
   ];
   

@@ -23,6 +23,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MainLayout from '@/components/layout/MainLayout';
 import { getTrainerClients } from '@/services/trainer';
+import { TrainerClient } from '@/types';
 
 const TrainerClients: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -34,7 +35,7 @@ const TrainerClients: React.FC = () => {
   });
 
   // Mock data for demonstration
-  const mockClients = [
+  const mockClients: TrainerClient[] = [
     {
       id: 1,
       name: 'Jane Cooper',
@@ -52,6 +53,10 @@ const TrainerClients: React.FC = () => {
       notes: 'Jane has been making excellent progress on her strength training routine. Consider increasing weights next session.',
       sessions_completed: 28,
       sessions_missed: 2,
+      role: 'member',
+      is_verified: true,
+      created_at: '2023-01-15',
+      updated_at: '2023-04-10',
     },
     {
       id: 2,
@@ -70,6 +75,10 @@ const TrainerClients: React.FC = () => {
       notes: 'Wade needs to focus on proper form during squat exercises. Showed improvement in cardio endurance.',
       sessions_completed: 15,
       sessions_missed: 4,
+      role: 'member',
+      is_verified: true,
+      created_at: '2023-02-20',
+      updated_at: '2023-04-05',
     },
     {
       id: 3,
@@ -88,6 +97,10 @@ const TrainerClients: React.FC = () => {
       notes: 'Excellent flexibility improvements. Continue with current yoga and pilates program.',
       sessions_completed: 32,
       sessions_missed: 1,
+      role: 'member',
+      is_verified: true,
+      created_at: '2023-03-10',
+      updated_at: '2023-04-08',
     },
   ];
   
@@ -126,13 +139,15 @@ const TrainerClients: React.FC = () => {
             </p>
           </div>
           <div className="flex flex-col sm:flex-row gap-2">
-            <Input
-              placeholder="Search clients..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="min-w-[240px]"
-              leftIcon={<Search className="h-4 w-4 text-gray-400" />}
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search clients..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="min-w-[240px] pl-9"
+              />
+            </div>
             <Button>Add New Client</Button>
           </div>
         </div>

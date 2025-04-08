@@ -1,4 +1,3 @@
-
 export interface User {
   id: number;
   name: string;
@@ -212,4 +211,18 @@ export interface ApiResponse<T> {
   current_page?: number;
   total?: number;
   last_page?: number;
+}
+
+export interface TrainerClient extends User {
+  progress: number;
+  lastSession: string;
+  nextSession: string;
+  goals: string[];
+  membership: {
+    name: string;
+    end_date: string;
+  };
+  notes: string;
+  sessions_completed: number;
+  sessions_missed: number;
 }

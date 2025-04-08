@@ -21,6 +21,7 @@ import Activities from "./pages/admin/Activities";
 import Memberships from "./pages/admin/Memberships";
 import Equipment from "./pages/admin/Equipment";
 import AdminProfile from "./pages/admin/Profile";
+import Verifications from "./pages/admin/Verifications";
 
 // Member pages
 import MemberActivities from "./pages/member/Activities";
@@ -40,11 +41,11 @@ const App = () => {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <AuthProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+      <BrowserRouter>
+        <TooltipProvider>
+          <AuthProvider>
+            <Toaster />
+            <Sonner />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<Login />} />
@@ -60,6 +61,7 @@ const App = () => {
               <Route path="/admin/memberships" element={<Memberships />} />
               <Route path="/admin/equipment" element={<Equipment />} />
               <Route path="/admin/profile" element={<AdminProfile />} />
+              <Route path="/admin/verifications" element={<Verifications />} />
               
               {/* Member routes */}
               <Route path="/activities" element={<MemberActivities />} />
@@ -76,9 +78,9 @@ const App = () => {
               
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </TooltipProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 };
