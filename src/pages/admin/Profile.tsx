@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, Lock, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { updateProfile, updatePassword } from '@/services/profile';
+import { User as UserType } from '@/types';
 
 const Profile: React.FC = () => {
   const { user, setUser } = useAuth();
@@ -29,7 +31,6 @@ const Profile: React.FC = () => {
     phone: '',
     position: '',
     department: '',
-    role: '',
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -46,7 +47,6 @@ const Profile: React.FC = () => {
         phone: user.phone || '',
         position: user.position || '',
         department: user.department || '',
-        role: user.role || '',
       });
     }
   }, [user]);
@@ -138,7 +138,7 @@ const Profile: React.FC = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="role">Role</Label>
-                    <Input id="role" value={profileData.role} disabled />
+                    <Input id="role" value={user?.role || ''} disabled />
                   </div>
 
                   <div className="space-y-2">

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { User, Lock, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import MainLayout from '@/components/layout/MainLayout';
 import { updateProfile, updatePassword } from '@/services/profile';
+import { User as UserType } from '@/types';
 
 const Profile: React.FC = () => {
   const { user, setUser } = useAuth();

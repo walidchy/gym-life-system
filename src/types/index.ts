@@ -1,3 +1,4 @@
+
 export interface User {
   id: number;
   name: string;
@@ -8,10 +9,14 @@ export interface User {
   phone?: string;
   address?: string;
   bio?: string;
+  birth_date?: string;
+  gender?: string;
   role: 'member' | 'trainer' | 'admin';
   is_verified: boolean;
   created_at: string;
   updated_at: string;
+  position?: string;
+  department?: string;
   memberProfile?: {
     phone?: string;
   };
