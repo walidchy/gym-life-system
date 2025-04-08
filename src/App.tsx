@@ -11,6 +11,7 @@ import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
 import MemberProfile from "./pages/member/profile";
 
 // Admin pages
@@ -28,6 +29,10 @@ import MemberMembership from "./pages/member/Membership";
 
 // Trainer pages
 import TrainerProfile from "./pages/trainer/Profile";
+import TrainerActivities from "./pages/trainer/Activities";
+import TrainerSchedule from "./pages/trainer/Schedule";
+import TrainerClients from "./pages/trainer/Clients";
+import TrainerCreateActivity from "./pages/trainer/CreateActivity";
 
 const App = () => {
   // Create a new QueryClient instance inside the component
@@ -46,7 +51,7 @@ const App = () => {
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/profile" element={<MemberProfile />} />
+              <Route path="/profile" element={<Profile />} />
               
               {/* Admin routes */}
               <Route path="/admin/members" element={<Members />} />
@@ -64,6 +69,10 @@ const App = () => {
               
               {/* Trainer routes */}
               <Route path="/trainer/profile" element={<TrainerProfile />} />
+              <Route path="/trainer/activities" element={<TrainerActivities />} />
+              <Route path="/trainer/schedule" element={<TrainerSchedule />} />
+              <Route path="/trainer/clients" element={<TrainerClients />} />
+              <Route path="/trainer/activities/new" element={<TrainerCreateActivity />} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>
