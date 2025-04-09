@@ -1,327 +1,252 @@
 
-import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { 
-  Award,
-  Calendar,
-  ChevronDown,
-  ChevronUp,
-  Heart,
-  Mail,
-  Phone,
-  Search,
-  User
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { PlusCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
-import { getTrainerClients } from '@/services/trainer';
-import { TrainerClient } from '@/types';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getMembers, deleteMember } from '@/services/members';
+import { Member, Membership } from '@/types';
 
-const TrainerClients: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [expandedClient, setExpandedClient] = useState<number | null>(null);
-  
-  const { data: clientsData, isLoading } = useQuery({
-    queryKey: ['trainerClients'],
-    queryFn: () => getTrainerClients(),
-  });
+// Define a separate interface for the member's membership which has a different structure
+interface MemberMembership {
+  id: number;
+  name: string;
+  is_active: boolean;
+  end_date: string;
+  membership_plan?: {
+    name: string;
+  };
+}
 
-  // Mock data for demonstration
-  const mockClients: TrainerClient[] = [
-    {
-      id: 1,
-      name: 'Jane Cooper',
-      email: 'jane.cooper@example.com',
-      phone: '+1 (555) 123-4567',
-      avatar: null,
-      progress: 80,
-      lastSession: '2 days ago',
-      nextSession: 'Tomorrow, 10:00 AM',
-      goals: ['Weight loss', 'Improved strength'],
-      membership: {
-        name: 'Premium',
-        end_date: '2025-08-15',
-      },
-      notes: 'Jane has been making excellent progress on her strength training routine. Consider increasing weights next session.',
-      sessions_completed: 28,
-      sessions_missed: 2,
-      role: 'member',
-      is_verified: true,
-      created_at: '2023-01-15',
-      updated_at: '2023-04-10',
-    },
-    {
-      id: 2,
-      name: 'Wade Warren',
-      email: 'wade.warren@example.com',
-      phone: '+1 (555) 987-6543',
-      avatar: null,
-      progress: 65,
-      lastSession: '1 week ago',
-      nextSession: 'Wed, Apr 9, 3:30 PM',
-      goals: ['Muscle gain', 'Endurance'],
-      membership: {
-        name: 'Standard',
-        end_date: '2025-05-22',
-      },
-      notes: 'Wade needs to focus on proper form during squat exercises. Showed improvement in cardio endurance.',
-      sessions_completed: 15,
-      sessions_missed: 4,
-      role: 'member',
-      is_verified: true,
-      created_at: '2023-02-20',
-      updated_at: '2023-04-05',
-    },
-    {
-      id: 3,
-      name: 'Esther Howard',
-      email: 'esther.howard@example.com',
-      phone: '+1 (555) 765-4321',
-      avatar: null,
-      progress: 90,
-      lastSession: 'Yesterday',
-      nextSession: 'Fri, Apr 11, 2:00 PM',
-      goals: ['Flexibility', 'Core strength'],
-      membership: {
-        name: 'Premium Plus',
-        end_date: '2025-10-05',
-      },
-      notes: 'Excellent flexibility improvements. Continue with current yoga and pilates program.',
-      sessions_completed: 32,
-      sessions_missed: 1,
-      role: 'member',
-      is_verified: true,
-      created_at: '2023-03-10',
-      updated_at: '2023-04-08',
-    },
-  ];
-  
-  // We would normally use the fetched data, but for demo purposes, we'll use the mock data
-  const clients = clientsData?.data || mockClients;
-  
-  const filteredClients = clients.filter((client) => 
-    client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    client.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-  
-  const toggleClientExpanded = (clientId: number) => {
-    if (expandedClient === clientId) {
-      setExpandedClient(null);
-    } else {
-      setExpandedClient(clientId);
+const Members: React.FC = () => {
+  const [members, setMembers] = useState<Member[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchMembers = async () => {
+      setIsLoading(true);
+      try {
+        const data = await getMembers();
+        setMembers(data);
+      } catch (error) {
+        console.error('Error fetching members:', error);
+        toast.error('Failed to load members');
+        setMembers([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchMembers();
+  }, []);
+
+  const handleDeleteMember = async (memberId: number) => {
+    if (window.confirm('Are you sure you want to delete this member?')) {
+      try {
+        await deleteMember(memberId);
+        setMembers(prev => prev.filter(member => member.id !== memberId));
+        toast.success('Member deleted successfully');
+      } catch (error) {
+        console.error('Error deleting member:', error);
+        toast.error('Failed to delete member. They may have existing bookings or payments.');
+      }
     }
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
+  const filteredMembers = members.filter(member => {
+    const matchesSearch = 
+      member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      member.email.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const hasActiveMembership = member.memberships?.some(m => m.is_active);
+    const matchesStatus = statusFilter === '' || 
+      (statusFilter === 'active' && hasActiveMembership) ||
+      (statusFilter === 'inactive' && !hasActiveMembership);
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const getLatestMembership = (memberships?: MemberMembership[]) => {
+    if (!memberships || memberships.length === 0) return null;
+    return [...memberships].sort((a, b) => 
+      new Date(b.end_date).getTime() - new Date(a.end_date).getTime()
+    )[0];
   };
 
   return (
     <MainLayout>
-      <div className="p-6 space-y-6">
-        <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+      <div className="space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">My Clients</h1>
-            <p className="text-muted-foreground">
-              View and manage the clients you're training
-            </p>
+            <h1 className="text-2xl font-bold tracking-tight">Members Management</h1>
+            <p className="text-muted-foreground">Manage gym members and their profiles</p>
           </div>
-          <div className="flex flex-col sm:flex-row gap-2">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search clients..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="min-w-[240px] pl-9"
-              />
-            </div>
-            <Button>Add New Client</Button>
-          </div>
+          <Button className="mt-4 md:mt-0" onClick={() => navigate('/admin/members/new')}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            Add Member
+          </Button>
         </div>
 
-        {isLoading ? (
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gym-primary"></div>
-          </div>
-        ) : filteredClients.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center h-64 text-center">
-              <User className="h-12 w-12 text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium mb-2">No clients found</h3>
-              <p className="text-sm text-gray-500 max-w-md">
-                You don't have any clients yet or none match your search criteria.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-4">
-            {filteredClients.map((client) => (
-              <Collapsible
-                key={client.id}
-                open={expandedClient === client.id}
-                onOpenChange={() => toggleClientExpanded(client.id)}
-                className="border rounded-lg overflow-hidden bg-white"
-              >
-                <div className="p-4 flex flex-col sm:flex-row justify-between sm:items-center">
-                  <div className="flex items-center space-x-4">
-                    <Avatar className="h-12 w-12">
-                      <AvatarImage src={client.avatar || ''} alt={client.name} />
-                      <AvatarFallback>{getInitials(client.name)}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <h3 className="text-lg font-medium">{client.name}</h3>
-                      <div className="flex flex-col sm:flex-row sm:items-center text-sm text-gray-500 gap-y-1 sm:gap-x-4">
-                        <div className="flex items-center">
-                          <Mail className="h-3 w-3 mr-1" />
-                          {client.email}
-                        </div>
-                        <div className="flex items-center">
-                          <Phone className="h-3 w-3 mr-1" />
-                          {client.phone}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center mt-4 sm:mt-0 space-x-2">
-                    <div className="mr-4">
-                      <div className="text-sm text-gray-500">Progress</div>
-                      <div className="relative w-32 h-2 bg-gray-200 rounded-full">
-                        <div
-                          className="absolute top-0 left-0 h-2 bg-gym-secondary rounded-full"
-                          style={{ width: `${client.progress}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                    
-                    <CollapsibleTrigger asChild>
-                      <Button variant="outline" size="sm">
-                        {expandedClient === client.id ? (
-                          <ChevronUp className="h-4 w-4 mr-1" />
-                        ) : (
-                          <ChevronDown className="h-4 w-4 mr-1" />
-                        )}
-                        {expandedClient === client.id ? 'Less' : 'More'}
-                      </Button>
-                    </CollapsibleTrigger>
-                  </div>
-                </div>
-                
-                <CollapsibleContent>
-                  <div className="border-t p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <div>
-                        <h4 className="font-medium mb-2 flex items-center">
-                          <Calendar className="h-4 w-4 mr-2 text-gray-500" />
-                          Session Information
-                        </h4>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Last Session:</span>
-                            <span>{client.lastSession}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Next Session:</span>
-                            <span>{client.nextSession}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Completed:</span>
-                            <span>{client.sessions_completed} sessions</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Missed:</span>
-                            <span>{client.sessions_missed} sessions</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h4 className="font-medium mb-2 flex items-center">
-                          <Award className="h-4 w-4 mr-2 text-gray-500" />
-                          Goals & Membership
-                        </h4>
-                        <div className="space-y-2 text-sm">
-                          <div>
-                            <span className="text-gray-500">Goals:</span>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              {client.goals.map((goal, index) => (
-                                <span 
-                                  key={index} 
-                                  className="inline-block px-2 py-1 bg-gray-100 rounded-full text-xs"
-                                >
-                                  {goal}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                          <div className="flex justify-between mt-2">
-                            <span className="text-gray-500">Membership:</span>
-                            <span>{client.membership.name}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-500">Expires:</span>
-                            <span>{new Date(client.membership.end_date).toLocaleDateString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <h4 className="font-medium mb-2 flex items-center">
-                          <Heart className="h-4 w-4 mr-2 text-gray-500" />
-                          Trainer Notes
-                        </h4>
-                        <p className="text-sm">{client.notes}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex justify-end mt-4 space-x-2">
-                      <Button variant="outline" size="sm">Edit Profile</Button>
-                      <Button size="sm">Schedule Session</Button>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
-          </div>
-        )}
-        
         <Card>
           <CardHeader>
-            <CardTitle>Client Summary</CardTitle>
+            <CardTitle>All Members</CardTitle>
+            <CardDescription>A list of all gym members</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gray-50 p-4 rounded-md">
-                <h3 className="font-medium mb-2">Total Clients</h3>
-                <p className="text-2xl font-bold">{clients.length}</p>
-                <p className="text-sm text-gray-500">Active clients</p>
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search members..."
+                  className="pl-8"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
               </div>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <h3 className="font-medium mb-2">Sessions This Week</h3>
-                <p className="text-2xl font-bold">12</p>
-                <p className="text-sm text-gray-500">Scheduled sessions</p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-md">
-                <h3 className="font-medium mb-2">Avg. Client Progress</h3>
-                <p className="text-2xl font-bold">
-                  {Math.round(clients.reduce((sum, client) => sum + client.progress, 0) / clients.length)}%
-                </p>
-                <p className="text-sm text-gray-500">Across all clients</p>
+              <div className="flex flex-wrap gap-2">
+                <Button 
+                  variant={statusFilter === '' ? 'default' : 'outline'} 
+                  onClick={() => setStatusFilter('')}
+                  size="sm"
+                >
+                  All
+                </Button>
+                <Button 
+                  variant={statusFilter === 'active' ? 'default' : 'outline'} 
+                  onClick={() => setStatusFilter('active')}
+                  size="sm"
+                >
+                  Active
+                </Button>
+                <Button 
+                  variant={statusFilter === 'inactive' ? 'default' : 'outline'} 
+                  onClick={() => setStatusFilter('inactive')}
+                  size="sm"
+                >
+                  Inactive
+                </Button>
               </div>
             </div>
+
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gym-primary"></div>
+              </div>
+            ) : filteredMembers.length > 0 ? (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Member</TableHead>
+                      <TableHead>Membership</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Membership End</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredMembers.map((member) => {
+                      const latestMembership = getLatestMembership(member.memberships);
+                      return (
+                        <TableRow key={member.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <Avatar>
+                                <AvatarImage src={member.avatar} alt={member.name} />
+                                <AvatarFallback>
+                                  {member.name.substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <div className="font-medium">{member.name}</div>
+                                <div className="text-sm text-muted-foreground">
+                                  {member.email}
+                                </div>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {latestMembership?.membership_plan?.name || 'No membership'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={latestMembership?.is_active ? 'default' : 'secondary'}
+                              className={latestMembership?.is_active ? 
+                                'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
+                            >
+                              {latestMembership?.is_active ? 'Active' : 'Inactive'}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{member.phone || 'Not provided'}</TableCell>
+                          <TableCell>
+                            {latestMembership?.end_date ? 
+                              new Date(latestMembership.end_date).toLocaleDateString() : '-'}
+                          </TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => navigate(`/admin/members/${member.id}`)}
+                            >
+                              View
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => navigate(`/admin/members/${member.id}/edit`)}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-500 hover:text-red-700"
+                              onClick={() => handleDeleteMember(member.id)}
+                            >
+                              Delete
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-10">
+                <p className="text-muted-foreground">No members found.</p>
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh List
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -329,4 +254,4 @@ const TrainerClients: React.FC = () => {
   );
 };
 
-export default TrainerClients;
+export default Members;

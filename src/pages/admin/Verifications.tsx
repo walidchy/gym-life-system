@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
@@ -66,53 +65,9 @@ const Verifications: React.FC = () => {
     }
   });
 
-  // Mock data for demonstration
-  const mockUsers: User[] = [
-    {
-      id: 1,
-      name: 'Jane Cooper',
-      email: 'jane@example.com',
-      phone: '+1 (555) 123-4567',
-      role: 'member',
-      is_verified: false,
-      created_at: '2023-04-01T10:30:00Z',
-      updated_at: '2023-04-01T10:30:00Z',
-    },
-    {
-      id: 2,
-      name: 'Alex Johnson',
-      email: 'alex@example.com',
-      phone: '+1 (555) 987-6543',
-      role: 'trainer',
-      is_verified: false,
-      created_at: '2023-04-02T14:15:00Z',
-      updated_at: '2023-04-02T14:15:00Z',
-    },
-    {
-      id: 3,
-      name: 'Sarah Williams',
-      email: 'sarah@example.com',
-      phone: '+1 (555) 765-4321',
-      role: 'member',
-      is_verified: false,
-      created_at: '2023-04-03T09:45:00Z',
-      updated_at: '2023-04-03T09:45:00Z',
-    },
-    {
-      id: 4,
-      name: 'Michael Brown',
-      email: 'michael@example.com',
-      phone: '+1 (555) 234-5678',
-      role: 'trainer',
-      is_verified: false,
-      created_at: '2023-04-04T16:20:00Z',
-      updated_at: '2023-04-04T16:20:00Z',
-    },
-  ];
-  
-  // We would normally use the fetched data, but for demo purposes, we'll use the mock data
-  const users = data?.data || mockUsers;
-  
+  // We use the fetched data instead of mock data
+  const users = data?.data || [];
+
   // Apply filters
   const filteredUsers = users.filter((user) => {
     // Search query filter
@@ -185,6 +140,9 @@ const Verifications: React.FC = () => {
                 <DropdownMenuItem onClick={() => setRoleFilter('trainer')}>
                   Trainers
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setRoleFilter('admin')}>
+                  Admins
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -237,7 +195,7 @@ const Verifications: React.FC = () => {
                       </TableCell>
                       <TableCell>
                         <Badge variant={user.role === 'trainer' ? 'default' : 'secondary'}>
-                          {user.role === 'member' ? 'Member' : 'Trainer'}
+                          {user.role === 'member' ? 'Member' : user.role === 'trainer' ? 'Trainer' : 'Admin'}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -310,6 +268,13 @@ const Verifications: React.FC = () => {
                 <h3 className="font-medium mb-2">Trainers</h3>
                 <p className="text-2xl font-bold">
                   {users.filter(user => user.role === 'trainer').length}
+                </p>
+                <p className="text-sm text-gray-500">Awaiting verification</p>
+              </div>
+              <div className="bg-gray-50 p-4 rounded-md">
+                <h3 className="font-medium mb-2">Admins</h3>
+                <p className="text-2xl font-bold">
+                  {users.filter(user => user.role === 'admin').length}
                 </p>
                 <p className="text-sm text-gray-500">Awaiting verification</p>
               </div>

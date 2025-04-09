@@ -1,10 +1,11 @@
 
 import api from './api';
-import { Activity, User, ApiResponse, TrainerClient } from '@/types';
+import { Activity, User, ApiResponse, Member } from '@/types';
 
+// Fetch all trainer activities
 export const getTrainerActivities = async (): Promise<ApiResponse<Activity[]>> => {
   try {
-    const response = await api.get<ApiResponse<Activity[]>>('/trainer/activities');
+    const response = await api.get<ApiResponse<Activity[]>>('/trainers/activities');
     return response.data;
   } catch (error) {
     console.error('Error fetching trainer activities:', error);
@@ -12,12 +13,13 @@ export const getTrainerActivities = async (): Promise<ApiResponse<Activity[]>> =
   }
 };
 
-export const getTrainerClients = async (): Promise<ApiResponse<TrainerClient[]>> => {
+// Fetch all members
+export const getMembers = async (): Promise<ApiResponse<Member[]>> => {
   try {
-    const response = await api.get<ApiResponse<TrainerClient[]>>('/trainer/clients');
+    const response = await api.get<ApiResponse<Member[]>>('/members');
     return response.data;
   } catch (error) {
-    console.error('Error fetching trainer clients:', error);
+    console.error('Error fetching members:', error);
     return { data: [], status: 'error' };
   }
 };
@@ -34,7 +36,7 @@ export const getTrainerSchedule = async (): Promise<ApiResponse<any>> => {
 
 export const createActivity = async (activityData: Partial<Activity>): Promise<Activity> => {
   try {
-    const response = await api.post<{ data: Activity }>('/trainer/activities', activityData);
+    const response = await api.post<{ data: Activity }>('/activities', activityData);
     return response.data.data;
   } catch (error) {
     console.error('Error creating activity:', error);
@@ -54,7 +56,7 @@ export const updateActivity = async (activityId: number, activityData: Partial<A
 
 export const deleteActivity = async (activityId: number): Promise<void> => {
   try {
-    await api.delete(`/trainer/activities/${activityId}`);
+    await api.delete(`/activities`);
   } catch (error) {
     console.error('Error deleting activity:', error);
     throw error;

@@ -56,7 +56,7 @@ const TrainerActivities: React.FC = () => {
     }
   };
 
-  const filteredActivities = activitiesData?.data.filter((activity) => 
+  const filteredActivities = activitiesData?.activities?.filter((activity) =>
     activity.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     activity.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
     activity.description.toLowerCase().includes(searchQuery.toLowerCase())
