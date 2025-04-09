@@ -35,6 +35,8 @@ const Memberships: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5; // Number of memberships per page
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -76,6 +78,13 @@ const Memberships: React.FC = () => {
       membership.category?.toLowerCase().includes(searchLower)
     );
   });
+
+  const paginatedMemberships = filteredMemberships.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredMemberships.length / itemsPerPage);
 
   const formatPrice = (price: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
@@ -127,15 +136,9 @@ const Memberships: React.FC = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => setStatusFilter('')}>
-                      All Statuses
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setStatusFilter('true')}>
-                      Active
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setStatusFilter('false')}>
-                      Inactive
-                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter('')}>All Statuses</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter('true')}>Active</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter('false')}>Inactive</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -159,7 +162,7 @@ const Memberships: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredMemberships.map((membership) => (
+                    {paginatedMemberships.map((membership) => (
                       <TableRow key={membership.id}>
                         <TableCell className="font-medium">{membership.name}</TableCell>
                         <TableCell>{formatPrice(membership.price)}</TableCell>
@@ -169,10 +172,7 @@ const Memberships: React.FC = () => {
                           {Array.isArray(membership.features) ? membership.features.join(', ') : ''}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            onClick={() => handleSubscribe(membership.id)}
-                          >
+                          <Button size="sm" onClick={() => handleSubscribe(membership.id)}>
                             Subscribe
                           </Button>
                         </TableCell>
@@ -184,15 +184,32 @@ const Memberships: React.FC = () => {
             ) : (
               <div className="text-center py-10">
                 <p className="text-muted-foreground">No memberships found.</p>
-                <Button
-                  variant="outline"
-                  className="mt-4"
-                  onClick={fetchMemberships}
-                >
+                <Button variant="outline" className="mt-4" onClick={fetchMemberships}>
                   Refresh List
                 </Button>
               </div>
             )}
+
+            {/* Pagination Controls */}
+            <div className="flex justify-end items-center mt-4 space-x-2">
+              <Button
+                variant="outline"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              >
+                Previous
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button
+                variant="outline"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              >
+                Next
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

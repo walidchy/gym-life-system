@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Search, AlertTriangle, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -23,7 +22,7 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { getEquipment, deleteEquipment } from '@/services/equipment';
-import { Equipment as EquipmentType } from '@/types'; // Renamed to avoid conflict
+import { Equipment as EquipmentType } from '@/types';
 
 const Equipment: React.FC = () => {
   const [equipment, setEquipment] = useState<EquipmentType[]>([]);
@@ -31,6 +30,8 @@ const Equipment: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 5;
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,10 +42,8 @@ const Equipment: React.FC = () => {
     setIsLoading(true);
     try {
       const data = await getEquipment();
-      console.log("Fetched equipment:", data);
       setEquipment(data);
     } catch (error) {
-      console.error('Error:', error);
       toast.error('Failed to load equipment');
       setEquipment([]);
     } finally {
@@ -59,22 +58,31 @@ const Equipment: React.FC = () => {
         setEquipment(prev => prev.filter(item => item.id !== id));
         toast.success('Equipment deleted successfully');
       } catch (error) {
-        console.error('Error:', error);
         toast.error('Failed to delete equipment');
       }
     }
   };
 
   const filteredEquipment = equipment.filter(item => {
-    const matchesSearch = 
+    const matchesSearch =
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (item.description?.toLowerCase().includes(searchQuery.toLowerCase()));
-    
+
     const matchesCategory = categoryFilter === '' || item.category === categoryFilter;
     const matchesStatus = statusFilter === '' || item.status === statusFilter;
-    
+
     return matchesSearch && matchesCategory && matchesStatus;
   });
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredEquipment.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredEquipment.length / itemsPerPage);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, categoryFilter, statusFilter]);
 
   const getCategories = () => {
     const categories = new Set(equipment.map(item => item.category));
@@ -82,18 +90,24 @@ const Equipment: React.FC = () => {
   };
 
   const getStatusBadge = (status: string) => {
-    switch(status) {
-      case 'available': return { label: 'Available', className: 'bg-green-100 text-green-800' };
-      case 'in_use': return { label: 'In Use', className: 'bg-blue-100 text-blue-800' };
-      case 'maintenance': return { label: 'Maintenance', className: 'bg-orange-100 text-orange-800' };
-      case 'retired': return { label: 'Retired', className: 'bg-red-100 text-red-800' };
-      default: return { label: status, className: '' };
+    switch (status) {
+      case 'available':
+        return { label: 'Available', className: 'bg-green-100 text-green-800' };
+      case 'in_use':
+        return { label: 'In Use', className: 'bg-blue-100 text-blue-800' };
+      case 'maintenance':
+        return { label: 'Maintenance', className: 'bg-orange-100 text-orange-800' };
+      case 'retired':
+        return { label: 'Retired', className: 'bg-red-100 text-red-800' };
+      default:
+        return { label: status, className: '' };
     }
   };
 
   const maintenanceNeeded = equipment.filter(
-    item => item.status === 'maintenance' || 
-           (item.maintenance_date && new Date(item.maintenance_date) <= new Date())
+    item =>
+      item.status === 'maintenance' ||
+      (item.maintenance_date && new Date(item.maintenance_date) <= new Date())
   ).length;
 
   const totalItems = equipment.reduce((sum, item) => sum + item.quantity, 0);
@@ -127,7 +141,7 @@ const Equipment: React.FC = () => {
               </p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium">Available</CardTitle>
@@ -137,12 +151,14 @@ const Equipment: React.FC = () => {
               <p className="text-xs text-muted-foreground">Ready for use</p>
             </CardContent>
           </Card>
-          
+
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium flex items-center">
                 Maintenance Needed
-                {maintenanceNeeded > 0 && <AlertTriangle className="ml-2 h-4 w-4 text-orange-500" />}
+                {maintenanceNeeded > 0 && (
+                  <AlertTriangle className="ml-2 h-4 w-4 text-orange-500" />
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -176,7 +192,9 @@ const Equipment: React.FC = () => {
                 >
                   <option value="">All Categories</option>
                   {getCategories().map(category => (
-                    <option key={category} value={category}>{category}</option>
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
                   ))}
                 </select>
                 <select
@@ -192,86 +210,106 @@ const Equipment: React.FC = () => {
                 </select>
               </div>
             </div>
-             
+
             {isLoading ? (
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gym-primary" />
               </div>
             ) : filteredEquipment.length > 0 ? (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Qty</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Last Maintenance</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredEquipment.map((item) => {
-                      const status = getStatusBadge(item.status);
-                      return (
-                        <TableRow key={item.id}>
-                          <TableCell className="font-medium">{item.name}</TableCell>
-                          <TableCell>{item.category}</TableCell>
-                          <TableCell>{item.quantity}</TableCell>
-                          <TableCell>
-                            <Badge className={status.className}>{status.label}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            {item.maintenance_date ? 
-                              new Date(item.maintenance_date).toLocaleDateString() : 'N/A'}
-                          </TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => navigate(`/admin/equipment/${item.id}`)}
-                            >
-                              View
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => navigate(`/admin/equipment/${item.id}/edit`)}
-                            >
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-red-500 hover:text-red-700"
-                              onClick={() => handleDelete(item.id)}
-                            >
-                              Delete
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              </div>
+              <>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Qty</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Last Maintenance</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {currentItems.map((item) => {
+                        const status = getStatusBadge(item.status);
+                        return (
+                          <TableRow key={item.id}>
+                            <TableCell className="font-medium">{item.name}</TableCell>
+                            <TableCell>{item.category}</TableCell>
+                            <TableCell>{item.quantity}</TableCell>
+                            <TableCell>
+                              <Badge className={status.className}>{status.label}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              {item.maintenance_date
+                                ? new Date(item.maintenance_date).toLocaleDateString()
+                                : 'N/A'}
+                            </TableCell>
+                            <TableCell className="text-right space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate(`/admin/equipment/${item.id}`)}
+                              >
+                                View
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => navigate(`/admin/equipment/${item.id}/edit`)}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-500 hover:text-red-700"
+                                onClick={() => handleDelete(item.id)}
+                              >
+                                Delete
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex justify-center items-center mt-4 gap-4">
+                  <Button
+                    variant="outline"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(prev => prev - 1)}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage(prev => prev + 1)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </>
             ) : (
               <div className="text-center py-10">
                 <p className="text-muted-foreground mb-4">
-                  {equipment.length === 0 ? 'No equipment found in system' : 'No matching equipment found'}
+                  {equipment.length === 0
+                    ? 'No equipment found in system'
+                    : 'No matching equipment found'}
                 </p>
                 <div className="flex justify-center gap-2">
-                  <Button 
-                    variant="outline"
-                    onClick={fetchEquipment}
-                  >
+                  <Button variant="outline" onClick={fetchEquipment}>
                     <RefreshCw className="mr-2 h-4 w-4" />
                     Refresh List
                   </Button>
-                  <Button 
-                    variant="default"
-                    onClick={() => navigate('/admin/equipment/new')}
-                  >
+                  <Button variant="default" onClick={() => navigate('/admin/equipment/new')}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Equipment
                   </Button>

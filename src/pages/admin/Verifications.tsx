@@ -8,7 +8,9 @@ import {
   Search,
   Shield,
   X,
-  Calendar
+  Calendar,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
@@ -25,13 +27,6 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -42,12 +37,15 @@ import MainLayout from '@/components/layout/MainLayout';
 import { getPendingVerifications, verifyUser } from '@/services/admin';
 import { User } from '@/types';
 
+const ITEMS_PER_PAGE = 10;
+
 const Verifications: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
-  
+  const [currentPage, setCurrentPage] = useState(1);
+
   const queryClient = useQueryClient();
-  
+
   const { data, isLoading } = useQuery({
     queryKey: ['pendingVerifications'],
     queryFn: () => getPendingVerifications(),
@@ -65,21 +63,21 @@ const Verifications: React.FC = () => {
     }
   });
 
-  // We use the fetched data instead of mock data
   const users = data?.data || [];
 
-  // Apply filters
   const filteredUsers = users.filter((user) => {
-    // Search query filter
     const matchesQuery = 
       user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
-    // Role filter
     const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-    
     return matchesQuery && matchesRole;
   });
+
+  const totalPages = Math.ceil(filteredUsers.length / ITEMS_PER_PAGE);
+  const paginatedUsers = filteredUsers.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
 
   const handleVerify = (userId: number, verified: boolean) => {
     verifyMutation.mutate({ userId, verified });
@@ -111,7 +109,6 @@ const Verifications: React.FC = () => {
               Review and verify user account registrations
             </p>
           </div>
-          
           <div className="flex flex-col sm:flex-row gap-2">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -122,7 +119,6 @@ const Verifications: React.FC = () => {
                 className="min-w-[240px] pl-9"
               />
             </div>
-            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="flex items-center">
@@ -131,18 +127,10 @@ const Verifications: React.FC = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setRoleFilter('all')}>
-                  All Roles
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setRoleFilter('member')}>
-                  Members
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setRoleFilter('trainer')}>
-                  Trainers
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setRoleFilter('admin')}>
-                  Admins
-                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setRoleFilter('all')}>All Roles</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setRoleFilter('member')}>Members</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setRoleFilter('trainer')}>Trainers</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setRoleFilter('admin')}>Admins</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -179,7 +167,7 @@ const Verifications: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((user) => (
+                  {paginatedUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center space-x-3">
@@ -242,10 +230,31 @@ const Verifications: React.FC = () => {
                   ))}
                 </TableBody>
               </Table>
+              <div className="flex justify-between items-center mt-4">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  disabled={currentPage === 1} 
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  disabled={currentPage === totalPages} 
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                >
+                  Next <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
             </CardContent>
           </Card>
         )}
-        
+
         <Card>
           <CardHeader>
             <CardTitle>Verification Statistics</CardTitle>

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { PlusCircle, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -42,6 +41,8 @@ const Members: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage, setItemsPerPage] = useState<number>(10); // Set items per page
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -88,11 +89,20 @@ const Members: React.FC = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Paginate filtered members
+  const indexOfLastMember = currentPage * itemsPerPage;
+  const indexOfFirstMember = indexOfLastMember - itemsPerPage;
+  const currentMembers = filteredMembers.slice(indexOfFirstMember, indexOfLastMember);
+
   const getLatestMembership = (memberships?: MemberMembership[]) => {
     if (!memberships || memberships.length === 0) return null;
     return [...memberships].sort((a, b) => 
       new Date(b.end_date).getTime() - new Date(a.end_date).getTime()
     )[0];
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
   };
 
   return (
@@ -154,7 +164,7 @@ const Members: React.FC = () => {
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gym-primary"></div>
               </div>
-            ) : filteredMembers.length > 0 ? (
+            ) : currentMembers.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -168,7 +178,7 @@ const Members: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredMembers.map((member) => {
+                    {currentMembers.map((member) => {
                       const latestMembership = getLatestMembership(member.memberships);
                       return (
                         <TableRow key={member.id}>
@@ -247,6 +257,24 @@ const Members: React.FC = () => {
                 </Button>
               </div>
             )}
+            
+            {/* Pagination Controls */}
+            <div className="flex justify-center gap-4 mt-4">
+              <Button 
+                variant="outline" 
+                disabled={currentPage === 1} 
+                onClick={() => handlePageChange(currentPage - 1)}
+              >
+                Prev
+              </Button>
+              <Button 
+                variant="outline" 
+                disabled={currentPage === Math.ceil(filteredMembers.length / itemsPerPage)} 
+                onClick={() => handlePageChange(currentPage + 1)}
+              >
+                Next
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

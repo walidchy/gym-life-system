@@ -26,7 +26,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Activity } from '@/types';
-import { getActivities } from '@/services/activities';
+import { getActivities, deleteActivity } from '@/services/activities';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 
@@ -36,6 +36,9 @@ const Activities: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [difficultyFilter, setDifficultyFilter] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -48,9 +51,10 @@ const Activities: React.FC = () => {
       const queryParams = new URLSearchParams();
       if (categoryFilter) queryParams.append('category', categoryFilter);
       if (difficultyFilter) queryParams.append('difficulty_level', difficultyFilter);
-      
+
       const data = await getActivities(queryParams.toString());
       setActivities(data || []);
+      setCurrentPage(1); // Reset to first page when data changes
     } catch (error) {
       console.error('Error fetching activities:', error);
       toast.error('Failed to load activities');
@@ -60,15 +64,22 @@ const Activities: React.FC = () => {
     }
   };
 
-  const handleJoinActivity = async (activityId: number) => {
-    try {
-      // Here you would typically call an API to join the activity
-      toast.success('Successfully joined the activity!');
-      // You might want to refresh the activities list or update the UI
-    } catch (error) {
-      console.error('Error joining activity:', error);
-      toast.error('Failed to join activity');
+  const handleDeleteActivity = async (id: number) => {
+    if (window.confirm('Are you sure you want to delete this activity?')) {
+      try {
+        await deleteActivity(id);
+        setActivities(prev => prev.filter(activity => activity.id !== id));
+        toast.success('Activity deleted successfully');
+      } catch (error) {
+        console.error('Error deleting activity:', error);
+        toast.error('Failed to delete activity. It may have existing bookings.');
+      }
     }
+  };
+
+  const handleJoinActivity = (id: number) => {
+    // Implement the logic to join the activity, e.g., navigating to a booking page, updating the activity status, etc.
+    toast.success(`Successfully joined activity ${id}`);
   };
 
   const filteredActivities = activities.filter(activity => {
@@ -80,6 +91,13 @@ const Activities: React.FC = () => {
       (activity.trainer?.name || '').toLowerCase().includes(searchLower)
     );
   });
+
+  const paginatedActivities = filteredActivities.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredActivities.length / itemsPerPage);
 
   const getCategories = () => {
     const categories = new Set(activities.map(activity => activity.category));
@@ -93,11 +111,9 @@ const Activities: React.FC = () => {
 
   const parseEquipment = (equipment: string | string[] | undefined): string => {
     if (!equipment) return '';
-    
     if (Array.isArray(equipment)) {
       return equipment.join(', ');
     }
-    
     try {
       const parsed = JSON.parse(equipment);
       return Array.isArray(parsed) ? parsed.join(', ') : equipment.toString();
@@ -111,17 +127,19 @@ const Activities: React.FC = () => {
       <div className="space-y-6">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Activities</h1>
-            <p className="text-muted-foreground">Browse and join gym activities and classes</p>
+            <h1 className="text-2xl font-bold tracking-tight">Activities Management</h1>
+            <p className="text-muted-foreground">Manage all gym activities and classes</p>
           </div>
+          <Button className="mt-4 md:mt-0" onClick={() => navigate('/admin/activities/new')}>
+            <PlusCircle className="h-4 w-4 mr-2" />
+            New Activity
+          </Button>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Available Activities</CardTitle>
-            <CardDescription>
-              A list of all activities you can join at the gym
-            </CardDescription>
+            <CardTitle>All Activities</CardTitle>
+            <CardDescription>A list of all activities offered at the gym</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col md:flex-row gap-4 mb-6">
@@ -143,14 +161,9 @@ const Activities: React.FC = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => setCategoryFilter('')}>
-                      All Categories
-                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setCategoryFilter('')}>All Categories</DropdownMenuItem>
                     {getCategories().map(category => (
-                      <DropdownMenuItem 
-                        key={category} 
-                        onClick={() => setCategoryFilter(category)}
-                      >
+                      <DropdownMenuItem key={category} onClick={() => setCategoryFilter(category)}>
                         {category}
                       </DropdownMenuItem>
                     ))}
@@ -165,14 +178,9 @@ const Activities: React.FC = () => {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
-                    <DropdownMenuItem onClick={() => setDifficultyFilter('')}>
-                      All Levels
-                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setDifficultyFilter('')}>All Levels</DropdownMenuItem>
                     {getDifficultyLevels().map(level => (
-                      <DropdownMenuItem 
-                        key={level} 
-                        onClick={() => setDifficultyFilter(level)}
-                      >
+                      <DropdownMenuItem key={level} onClick={() => setDifficultyFilter(level)}>
                         {level}
                       </DropdownMenuItem>
                     ))}
@@ -186,61 +194,81 @@ const Activities: React.FC = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gym-primary"></div>
               </div>
             ) : filteredActivities.length > 0 ? (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Difficulty</TableHead>
-                      <TableHead>Duration</TableHead>
-                      <TableHead>Location</TableHead>
-                      <TableHead>Equipment</TableHead>
-                      <TableHead>Trainer</TableHead>
-                      <TableHead className="text-right">Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredActivities.map((activity) => (
-                      <TableRow key={activity.id}>
-                        <TableCell className="font-medium">{activity.name}</TableCell>
-                        <TableCell>{activity.category}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant={
-                              activity.difficulty_level === 'beginner' ? 'outline' :
-                              activity.difficulty_level === 'intermediate' ? 'secondary' : 'destructive'
-                            }
-                          >
-                            {activity.difficulty_level}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{activity.duration_minutes} min</TableCell>
-                        <TableCell>{activity.location}</TableCell>
-                        <TableCell>{parseEquipment(activity.equipment_needed)}</TableCell>
-                        <TableCell>{activity.trainer?.name || 'No trainer assigned'}</TableCell>
-                        <TableCell className="text-right">
-                          <Button 
-                            variant="default"
-                            size="sm"
-                            onClick={() => handleJoinActivity(activity.id)}
-                          >
-                            Join
-                          </Button>
-                        </TableCell>
+              <>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Category</TableHead>
+                        <TableHead>Difficulty</TableHead>
+                        <TableHead>Duration</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Equipment</TableHead>
+                        <TableHead>Trainer</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedActivities.map((activity) => (
+                        <TableRow key={activity.id}>
+                          <TableCell className="font-medium">{activity.name}</TableCell>
+                          <TableCell>{activity.category}</TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                activity.difficulty_level === 'beginner' ? 'outline' :
+                                activity.difficulty_level === 'intermediate' ? 'secondary' :
+                                'destructive'
+                              }
+                            >
+                              {activity.difficulty_level}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{activity.duration_minutes} min</TableCell>
+                          <TableCell>{activity.location}</TableCell>
+                          <TableCell>{parseEquipment(activity.equipment_needed)}</TableCell>
+                          <TableCell>{activity.trainer?.name || 'No trainer assigned'}</TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleJoinActivity(activity.id)}
+                            >
+                              Join
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Pagination Controls */}
+                <div className="flex justify-end items-center mt-4 space-x-2">
+                  <Button
+                    variant="outline"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </>
             ) : (
               <div className="text-center py-10">
                 <p className="text-muted-foreground">No activities found.</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={fetchActivities}
-                >
+                <Button variant="outline" className="mt-4" onClick={fetchActivities}>
                   Refresh List
                 </Button>
               </div>

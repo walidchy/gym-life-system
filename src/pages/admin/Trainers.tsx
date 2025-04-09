@@ -34,11 +34,17 @@ const Trainers: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [specializationFilter, setSpecializationFilter] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 5;
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchTrainers();
   }, [specializationFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1); // Reset to page 1 when search or filter changes
+  }, [searchQuery, specializationFilter]);
 
   const fetchTrainers = async () => {
     setIsLoading(true);
@@ -79,6 +85,13 @@ const Trainers: React.FC = () => {
       trainer.trainer?.bio?.toLowerCase().includes(searchLower)
     );
   });
+
+  const paginatedTrainers = filteredTrainers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const totalPages = Math.ceil(filteredTrainers.length / itemsPerPage);
 
   const getSpecializations = () => {
     const specializations = new Set(
@@ -164,62 +177,92 @@ const Trainers: React.FC = () => {
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gym-primary"></div>
               </div>
             ) : filteredTrainers.length > 0 ? (
-              <div className="rounded-md border">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Specialization</TableHead>
-                      <TableHead>Experience</TableHead>
-                      <TableHead>Certifications</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>Active Members</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredTrainers.map((trainer) => (
-                      <TableRow key={trainer.id}>
-                        <TableCell className="font-medium">{trainer.name}</TableCell>
-                        <TableCell>{trainer.email}</TableCell>
-                        <TableCell>{trainer.trainer?.specialization || '-'}</TableCell>
-                        <TableCell>{trainer.trainer?.experience_years} years</TableCell>
-                        <TableCell>
-                          {trainer.trainer?.certifications ? 
-                            parseCertifications(trainer.trainer.certifications) : '-'}
-                        </TableCell>
-                        <TableCell>{trainer.trainer?.phone || '-'}</TableCell>
-                        <TableCell>{trainer.active_members || 0}</TableCell>
-                        <TableCell className="text-right space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => navigate(`/admin/trainers/${trainer.id}`)}
-                          >
-                            View
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => navigate(`/admin/trainers/${trainer.id}/edit`)}
-                          >
-                            Edit
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="text-red-500 hover:text-red-700"
-                            onClick={() => handleDeleteTrainer(trainer.id)}
-                          >
-                            Delete
-                          </Button>
-                        </TableCell>
+              <>
+                <div className="rounded-md border">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Name</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Specialization</TableHead>
+                        <TableHead>Experience</TableHead>
+                        <TableHead>Certifications</TableHead>
+                        <TableHead>Phone</TableHead>
+                        <TableHead>Active Members</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {paginatedTrainers.map((trainer) => (
+                        <TableRow key={trainer.id}>
+                          <TableCell className="font-medium">{trainer.name}</TableCell>
+                          <TableCell>{trainer.email}</TableCell>
+                          <TableCell>{trainer.trainer?.specialization || '-'}</TableCell>
+                          <TableCell>{trainer.trainer?.experience_years} years</TableCell>
+                          <TableCell>
+                            {trainer.trainer?.certifications ? 
+                              parseCertifications(trainer.trainer.certifications) : '-'}
+                          </TableCell>
+                          <TableCell>{trainer.trainer?.phone || '-'}</TableCell>
+                          <TableCell>{trainer.active_members || 0}</TableCell>
+                          <TableCell className="text-right space-x-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => navigate(`/admin/trainers/${trainer.id}`)}
+                            >
+                              View
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => navigate(`/admin/trainers/${trainer.id}/edit`)}
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="text-red-500 hover:text-red-700"
+                              onClick={() => handleDeleteTrainer(trainer.id)}
+                            >
+                              Delete
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {totalPages > 1 && (
+                  <div className="flex justify-center items-center gap-2 mt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                    >
+                      Previous
+                    </Button>
+                    {[...Array(totalPages)].map((_, index) => (
+                      <Button
+                        key={index}
+                        variant={index + 1 === currentPage ? 'default' : 'outline'}
+                        onClick={() => setCurrentPage(index + 1)}
+                      >
+                        {index + 1}
+                      </Button>
                     ))}
-                  </TableBody>
-                </Table>
-              </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                      disabled={currentPage === totalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-10">
                 <p className="text-muted-foreground">No trainers found.</p>

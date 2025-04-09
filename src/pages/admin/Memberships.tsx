@@ -35,11 +35,17 @@ const Memberships: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 5;
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchMemberships();
   }, [statusFilter]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
 
   const fetchMemberships = async () => {
     setIsLoading(true);
@@ -80,7 +86,13 @@ const Memberships: React.FC = () => {
     );
   });
 
-  const formatPrice = (price: number) => 
+  const totalPages = Math.ceil(filteredMemberships.length / itemsPerPage);
+  const paginatedMemberships = filteredMemberships.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const formatPrice = (price: number) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(price);
 
   const getStatusBadge = (isActive: boolean) => (
@@ -148,7 +160,7 @@ const Memberships: React.FC = () => {
               <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gym-primary"></div>
               </div>
-            ) : filteredMemberships.length > 0 ? (
+            ) : paginatedMemberships.length > 0 ? (
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
@@ -162,7 +174,7 @@ const Memberships: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredMemberships.map((membership) => (
+                    {paginatedMemberships.map((membership) => (
                       <TableRow key={membership.id}>
                         <TableCell className="font-medium">{membership.name}</TableCell>
                         <TableCell>{formatPrice(membership.price)}</TableCell>
@@ -172,23 +184,23 @@ const Memberships: React.FC = () => {
                           {Array.isArray(membership.features) ? membership.features.join(', ') : ''}
                         </TableCell>
                         <TableCell className="text-right space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => navigate(`/admin/memberships/${membership.id}`)}
                           >
                             View
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => navigate(`/admin/memberships/${membership.id}/edit`)}
                           >
                             Edit
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             className="text-red-500 hover:text-red-700"
                             onClick={() => handleDeleteMembership(membership.id)}
                           >
@@ -203,13 +215,40 @@ const Memberships: React.FC = () => {
             ) : (
               <div className="text-center py-10">
                 <p className="text-muted-foreground">No memberships found.</p>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="mt-4"
                   onClick={fetchMemberships}
                 >
                   Refresh List
                 </Button>
+              </div>
+            )}
+
+            {/* Pagination controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-between items-center px-4 py-2">
+                <span className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
               </div>
             )}
           </CardContent>

@@ -1,8 +1,7 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { Activity, Dumbbell, Edit, Plus, Trash } from 'lucide-react';
+import { Dumbbell, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -133,22 +132,22 @@ const TrainerActivities: React.FC = () => {
                       <TableCell>{activity.max_participants}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="icon" asChild>
+                          <Button variant="outline" size="sm" asChild>
                             <Link to={`/trainer/activities/${activity.id}`}>
-                              <Activity className="h-4 w-4" />
+                              View
                             </Link>
                           </Button>
-                          <Button variant="outline" size="icon" asChild>
+                          <Button variant="outline" size="sm" asChild>
                             <Link to={`/trainer/activities/${activity.id}/edit`}>
-                              <Edit className="h-4 w-4" />
+                              Edit
                             </Link>
                           </Button>
-                          <Button 
-                            variant="outline" 
-                            size="icon" 
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleDeleteClick(activity)}
                           >
-                            <Trash className="h-4 w-4" />
+                            Delete
                           </Button>
                         </div>
                       </TableCell>
