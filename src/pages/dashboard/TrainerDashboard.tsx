@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, Users, CheckCircle } from 'lucide-react';
+import { Calendar, Clock, Users, CheckCircle, Plus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const TrainerDashboard: React.FC = () => {
@@ -29,10 +29,16 @@ const TrainerDashboard: React.FC = () => {
         </div>
         <div className="mt-4 md:mt-0 space-x-2">
           <Button asChild variant="outline">
-            <Link to="/trainer/schedule">View Schedule</Link>
+            <Link to="/trainer/schedule">
+              <Calendar className="h-4 w-4 mr-2" />
+              Manage Schedule
+            </Link>
           </Button>
           <Button asChild>
-            <Link to="/trainer/activities/new">Create Activity</Link>
+            <Link to="/trainer/activities/new">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Activity
+            </Link>
           </Button>
         </div>
       </div>

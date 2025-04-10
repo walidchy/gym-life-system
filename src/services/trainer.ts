@@ -1,6 +1,6 @@
 
 import api from './api';
-import { Activity, User, ApiResponse, Member } from '@/types';
+import { Activity, User, ApiResponse, Member, ActivitySchedule } from '@/types';
 
 // Fetch all trainer activities
 export const getTrainerActivities = async (): Promise<ApiResponse<Activity[]>> => {
@@ -33,6 +33,35 @@ export const getTrainerSchedule = async (): Promise<ApiResponse<any>> => {
   }
 };
 
+export const updateTrainerScheduleItem = async (scheduleId: number, scheduleData: Partial<ActivitySchedule>): Promise<ApiResponse<ActivitySchedule>> => {
+  try {
+    const response = await api.put<ApiResponse<ActivitySchedule>>(`/trainer/schedule/${scheduleId}`, scheduleData);
+    return response.data;
+  } catch (error) {
+    console.error('Error updating schedule item:', error);
+    throw error;
+  }
+};
+
+export const addTrainerScheduleItem = async (scheduleData: Partial<ActivitySchedule>): Promise<ApiResponse<ActivitySchedule>> => {
+  try {
+    const response = await api.post<ApiResponse<ActivitySchedule>>('/trainer/schedule', scheduleData);
+    return response.data;
+  } catch (error) {
+    console.error('Error adding schedule item:', error);
+    throw error;
+  }
+};
+
+export const deleteTrainerScheduleItem = async (scheduleId: number): Promise<void> => {
+  try {
+    await api.delete(`/trainer/schedule/${scheduleId}`);
+  } catch (error) {
+    console.error('Error deleting schedule item:', error);
+    throw error;
+  }
+};
+
 export const createActivity = async (activityData: Partial<Activity>): Promise<Activity> => {
   try {
     const response = await api.post<{ data: Activity }>('/activities', activityData);
@@ -55,12 +84,13 @@ export const updateActivity = async (activityId: number, activityData: Partial<A
 
 export const deleteActivity = async (activityId: number): Promise<void> => {
   try {
-    await api.delete(`/activities`);
+    await api.delete(`/activities/${activityId}`);
   } catch (error) {
     console.error('Error deleting activity:', error);
     throw error;
   }
 };
+
 export const getTrainers = async (queryParams?: string): Promise<ApiResponse<User[]>> => {
   try {
     const url = `/trainers${queryParams ? `?${queryParams}` : ''}`;
@@ -89,13 +119,11 @@ export const deleteTrainer = async (userId: number): Promise<void> => {
   }
 };
 
-
-
-export const updateTrainer = async (userId: number): Promise<void> => {
+export const updateTrainer = async (userId: number, trainerData: Partial<User>): Promise<void> => {
   try {
-    await api.delete(`/trainers/${userId}`);
+    await api.put(`/trainers/${userId}`, trainerData);
   } catch (error) {
-    console.error('Error deleting trainer:', error);
+    console.error('Error updating trainer:', error);
     throw error;
   }
 };
