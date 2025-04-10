@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User } from '../types';
 import { getCurrentUser } from '../services/auth';
 import { toast } from 'sonner';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 interface AuthContextType {
   user: User | null;
@@ -20,6 +20,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const checkAuth = async (): Promise<boolean> => {
     const token = localStorage.getItem('auth_token');
@@ -59,8 +60,24 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   useEffect(() => {
+    // Check authentication when the app loads
     checkAuth();
-  }, []);
+    
+    // Also check auth when navigating between protected routes
+    const protectedRoutes = ['/dashboard', '/profile', '/activities', '/bookings', '/membership'];
+    const adminRoutes = ['/admin', '/admin/members', '/admin/trainers', '/admin/activities', '/admin/memberships', '/admin/equipment', '/admin/profile', '/admin/verifications'];
+    const trainerRoutes = ['/trainer', '/trainer/profile', '/trainer/activities', '/trainer/schedule', '/trainer/clients'];
+    
+    const allProtectedRoutes = [...protectedRoutes, ...adminRoutes, ...trainerRoutes];
+    
+    if (allProtectedRoutes.some(route => location.pathname.startsWith(route))) {
+      checkAuth().then(isAuth => {
+        if (!isAuth && !isLoading) {
+          navigate('/login');
+        }
+      });
+    }
+  }, [location.pathname]);
 
   return (
     <AuthContext.Provider

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
@@ -7,24 +6,24 @@ import { Dumbbell, Users, Award, Calendar, ArrowRight, CheckCircle } from 'lucid
 const LandingPage: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Hero Section */}
+      {/* Hero Section with Updated Styling */}
       <header className="relative">
-        <div className="absolute inset-0 bg-gradient-to-r from-gym-accent to-gym-secondary opacity-90"></div>
+        <div className="absolute inset-0 bg-gradient-to-r from-gym-primary to-gym-secondary opacity-90"></div>
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center flex-shrink-0 text-white">
-              <span className="font-bold text-xl tracking-tight">GYM<span className="font-light">LIFE</span></span>
+              <span className="font-bold text-2xl tracking-tight">GYM<span className="font-light">LIFE</span></span>
             </div>
             <div className="hidden md:block">
               <div className="ml-10 flex items-baseline space-x-4">
-                <a href="#features" className="text-white hover:text-gray-200 px-3 py-2 rounded-md text-sm font-medium">Features</a>
-                <a href="#membership" className="text-white hover:text-gray-200 px-3 py-2 rounded-md text-sm font-medium">Membership</a>
-                <a href="#testimonials" className="text-white hover:text-gray-200 px-3 py-2 rounded-md text-sm font-medium">Testimonials</a>
+                <a href="#features" className="text-white hover:text-gray-200 px-3 py-2 rounded-md text-sm font-medium transition-colors">Features</a>
+                <a href="#membership" className="text-white hover:text-gray-200 px-3 py-2 rounded-md text-sm font-medium transition-colors">Membership</a>
+                <a href="#testimonials" className="text-white hover:text-gray-200 px-3 py-2 rounded-md text-sm font-medium transition-colors">Testimonials</a>
               </div>
             </div>
             <div>
-              <Link to="/login" className="text-white hover:text-gray-200 px-3 py-2 text-sm font-medium">Log in</Link>
-              <Link to="/register" className="ml-3 bg-white text-gym-accent hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-medium">Sign up</Link>
+              <Link to="/login" className="text-white hover:text-gray-200 px-3 py-2 text-sm font-medium transition-colors">Log in</Link>
+              <Link to="/register" className="ml-3 bg-white text-gym-accent hover:bg-gray-100 px-4 py-2 rounded-md text-sm font-medium transition-colors">Sign up</Link>
             </div>
           </div>
         </div>
@@ -40,7 +39,7 @@ const LandingPage: React.FC = () => {
               </p>
               <div className="mt-8 sm:max-w-lg sm:mx-auto sm:text-center lg:text-left lg:mx-0">
                 <div className="flex flex-col sm:flex-row sm:justify-center lg:justify-start space-y-4 sm:space-y-0 sm:space-x-4">
-                  <Button size="lg" asChild>
+                  <Button size="lg" asChild className="bg-gym-accent hover:bg-gym-accent/90 text-white">
                     <Link to="/register">Get Started</Link>
                   </Button>
                   <Button size="lg" variant="outline" className="text-white border-white hover:bg-white/10">
@@ -53,19 +52,14 @@ const LandingPage: React.FC = () => {
               </div>
             </div>
             <div className="mt-12 relative sm:max-w-lg sm:mx-auto lg:mt-0 lg:max-w-none lg:mx-0 lg:col-span-6 lg:flex lg:items-center">
-              <div className="relative mx-auto w-full rounded-lg shadow-lg lg:max-w-md">
+              <div className="relative mx-auto w-full rounded-lg shadow-xl lg:max-w-md">
                 <div className="relative block w-full bg-white rounded-lg overflow-hidden">
                   <img
-                    className="w-full"
-                    src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80"
-                    alt="Gym management dashboard"
+                    className="w-full h-[300px] object-cover"
+                    src="https://images.unsplash.com/photo-1549060279-7e168fcee0c2?ixlib=rb-1.2.1&auto=format&fit=crop&w=1170&q=80"
+                    alt="Modern gym with equipment"
                   />
-                  <div className="absolute inset-0 w-full h-full flex items-center justify-center">
-                    <svg className="h-20 w-20 text-gym-primary" fill="currentColor" viewBox="0 0 84 84">
-                      <circle opacity="0.9" cx="42" cy="42" r="42" fill="white" />
-                      <path d="M55 42L35 55V29L55 42Z" fill="currentColor" />
-                    </svg>
-                  </div>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
                 </div>
               </div>
             </div>
@@ -73,8 +67,8 @@ const LandingPage: React.FC = () => {
         </div>
       </header>
 
-      {/* Features Section */}
-      <section id="features" className="py-16 bg-white">
+      {/* Features Section with Enhanced Styling */}
+      <section id="features" className="py-20 bg-white">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-base text-gym-primary font-semibold tracking-wide uppercase">Features</h2>
@@ -87,8 +81,8 @@ const LandingPage: React.FC = () => {
           </div>
 
           <div className="mt-16">
-            <div className="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-10">
-              <div className="flex">
+            <div className="space-y-10 md:space-y-0 md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-12">
+              <div className="flex bg-gray-50 p-6 rounded-xl hover:shadow-md transition-all">
                 <div className="flex-shrink-0">
                   <div className="flex items-center justify-center h-12 w-12 rounded-md bg-gym-secondary text-white">
                     <Users className="h-6 w-6" />
@@ -102,7 +96,7 @@ const LandingPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex">
+              <div className="flex bg-gray-50 p-6 rounded-xl hover:shadow-md transition-all">
                 <div className="flex-shrink-0">
                   <div className="flex items-center justify-center h-12 w-12 rounded-md bg-gym-secondary text-white">
                     <Calendar className="h-6 w-6" />
@@ -116,7 +110,7 @@ const LandingPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex">
+              <div className="flex bg-gray-50 p-6 rounded-xl hover:shadow-md transition-all">
                 <div className="flex-shrink-0">
                   <div className="flex items-center justify-center h-12 w-12 rounded-md bg-gym-secondary text-white">
                     <Dumbbell className="h-6 w-6" />
@@ -130,7 +124,7 @@ const LandingPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex">
+              <div className="flex bg-gray-50 p-6 rounded-xl hover:shadow-md transition-all">
                 <div className="flex-shrink-0">
                   <div className="flex items-center justify-center h-12 w-12 rounded-md bg-gym-secondary text-white">
                     <Award className="h-6 w-6" />
@@ -454,7 +448,7 @@ const LandingPage: React.FC = () => {
             <div className="mt-10 lg:mt-0 flex justify-center">
               <img
                 className="h-96 w-auto rounded-lg shadow-xl"
-                src="https://images.unsplash.com/photo-1549060279-7e168fcee0c2?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80"
+                src="https://images.unsplash.com/photo-1549060279-7e168fcee0c2?ixlib=rb-1.2.1&auto=format&fit=crop&w=1170&q=80"
                 alt="Gym mobile app"
               />
             </div>
