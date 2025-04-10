@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import LandingPage from './LandingPage';
@@ -43,6 +42,8 @@ const Index: React.FC = () => {
     );
   }
 
+  // If user is authenticated but somehow ends up here, show Dashboard
+  // Otherwise show LandingPage for non-authenticated users
   return isAuthenticated ? <Dashboard /> : <LandingPage />;
 };
 

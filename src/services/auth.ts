@@ -13,7 +13,13 @@ export const register = async (userData: RegisterData): Promise<{ user: User; me
 };
 
 export const logout = async (): Promise<void> => {
-  await api.post('/logout');
+  try {
+    await api.post('/logout');
+  } catch (error) {
+    console.error('Error during logout API call:', error);
+    // Continue with local logout even if API fails
+  }
+  
   localStorage.removeItem('auth_token');
   localStorage.removeItem('user');
 };

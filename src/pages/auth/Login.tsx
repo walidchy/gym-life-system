@@ -28,7 +28,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { setUser } = useAuth();
+  const { setUser, checkAuth } = useAuth();
   
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),

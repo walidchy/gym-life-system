@@ -12,10 +12,13 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    // If authenticated and not a member, redirect to the appropriate dashboard
-    if (isAuthenticated && user && user.role !== 'member') {
-      const redirectPath = user.role === 'admin' ? '/admin/profile' : '/trainer/profile';
-      navigate(redirectPath);
+    // Redirect non-member users to their appropriate dashboards
+    if (isAuthenticated && user) {
+      if (user.role === 'admin') {
+        navigate('/admin/profile');
+      } else if (user.role === 'trainer') {
+        navigate('/trainer/profile');
+      }
     }
   }, [user, isAuthenticated, navigate]);
 
@@ -33,23 +36,12 @@ const Dashboard: React.FC = () => {
     return <Navigate to="/login" />;
   }
 
-  const renderDashboard = () => {
-    switch (user?.role) {
-      case 'member':
-        return <MemberDashboard />;
-      case 'trainer':
-        return <TrainerDashboard />;
-      case 'admin':
-        return <AdminDashboard />;
-      default:
-        return <MemberDashboard />;
-    }
-  };
-
+  // Only members should see this dashboard component
+  // Admin/Trainers will be redirected in the useEffect
   return (
     <MainLayout>
       <div className="px-4 py-8 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full">
-        {renderDashboard()}
+        <MemberDashboard />
       </div>
     </MainLayout>
   );

@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { User } from '../types';
-import { getCurrentUser } from '../services/auth';
+import { getCurrentUser, logout as logoutService } from '../services/auth';
 import { toast } from 'sonner';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -52,46 +52,67 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user');
-    setUser(null);
-    toast.success('You have been logged out successfully');
-    navigate('/login');
+  const logout = async () => {
+    try {
+      await logoutService();
+    } catch (error) {
+      console.error('Error during logout:', error);
+    } finally {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      setUser(null);
+      toast.success('You have been logged out successfully');
+      navigate('/login');
+    }
   };
 
-  const redirectBasedOnRole = (isAuth: boolean) => {
-    if (!isAuth || !user) return;
+  // This function ensures the user is redirected to the correct dashboard based on their role
+  const redirectBasedOnRole = (user: User | null) => {
+    if (!user) return;
     
-    // Get the base path of the current location to check what section we're in
-    const pathSegments = location.pathname.split('/').filter(Boolean);
+    const currentPath = location.pathname;
+    
+    // Define the correct paths for each role
+    let correctPath = '';
+    switch (user.role) {
+      case 'admin':
+        correctPath = '/admin/profile';
+        break;
+      case 'trainer':
+        correctPath = '/trainer/profile';
+        break;
+      case 'member':
+      default:
+        correctPath = '/dashboard';
+        break;
+    }
+    
+    // If user is on a generic path or wrong section, redirect to correct path
+    if (currentPath === '/' || currentPath === '/login' || currentPath === '/dashboard') {
+      navigate(correctPath);
+      return;
+    }
+    
+    // Check if user is in a section they shouldn't be in
+    const pathSegments = currentPath.split('/').filter(Boolean);
     const currentSection = pathSegments[0] || '';
     
-    // Define the correct base path for each role
-    const rolePaths = {
-      admin: 'admin',
-      trainer: 'trainer',
-      member: ''
-    };
+    // If admin trying to access member or trainer routes
+    if (user.role === 'admin' && (currentSection === 'trainer' || !['admin', ''].includes(currentSection))) {
+      navigate(correctPath);
+      return;
+    }
     
-    // Check if the user is in a section that doesn't match their role
-    const userRole = user.role as keyof typeof rolePaths;
-    const correctSection = rolePaths[userRole];
+    // If trainer trying to access admin or member routes
+    if (user.role === 'trainer' && (currentSection === 'admin' || (!['trainer', ''].includes(currentSection) && !currentPath.startsWith('/profile')))) {
+      navigate(correctPath);
+      return;
+    }
     
-    // If user is on dashboard, profile, or in wrong section, redirect to the correct page
-    if (
-      (location.pathname === '/dashboard' || location.pathname === '/profile') ||
-      (
-        currentSection !== correctSection && 
-        currentSection !== '' && // Allow access to root routes
-        !(correctSection === '' && currentSection === 'activities') && // Allow members to access /activities
-        !(correctSection === '' && currentSection === 'bookings') && // Allow members to access /bookings
-        !(correctSection === '' && currentSection === 'membership') && // Allow members to access /membership
-        !(correctSection === '' && currentSection === 'member')  // Allow members to access /member routes
-      )
-    ) {
-      const redirectPath = userRole === 'member' ? '/dashboard' : `/${userRole}/profile`;
-      navigate(redirectPath);
+    // If member trying to access admin or trainer routes
+    if (user.role === 'member' && (currentSection === 'admin' || currentSection === 'trainer')) {
+      navigate(correctPath);
+      return;
     }
   };
 
@@ -99,27 +120,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Check authentication when the app loads
     checkAuth().then(isAuth => {
       if (isAuth && user) {
-        redirectBasedOnRole(true);
+        redirectBasedOnRole(user);
       }
     });
-    
-    // Also check auth when navigating between protected routes
-    const protectedRoutes = ['/dashboard', '/profile', '/activities', '/bookings', '/membership', '/member'];
-    const adminRoutes = ['/admin', '/admin/members', '/admin/trainers', '/admin/activities', '/admin/memberships', '/admin/equipment', '/admin/profile', '/admin/verifications'];
-    const trainerRoutes = ['/trainer', '/trainer/profile', '/trainer/activities', '/trainer/schedule', '/trainer/clients'];
-    
-    const allProtectedRoutes = [...protectedRoutes, ...adminRoutes, ...trainerRoutes];
-    
-    if (allProtectedRoutes.some(route => location.pathname.startsWith(route))) {
+  }, []);
+
+  // Also check auth when navigating between protected routes
+  useEffect(() => {
+    if (user) {
+      redirectBasedOnRole(user);
+    } else if (
+      location.pathname !== '/login' && 
+      location.pathname !== '/register' && 
+      location.pathname !== '/forgot-password' &&
+      location.pathname !== '/'
+    ) {
       checkAuth().then(isAuth => {
-        if (!isAuth && !isLoading) {
+        if (!isAuth) {
           navigate('/login');
-        } else if (isAuth && user) {
-          redirectBasedOnRole(true);
+        } else if (user) {
+          redirectBasedOnRole(user);
         }
       });
     }
-  }, [location.pathname]);
+  }, [location.pathname, user]);
 
   return (
     <AuthContext.Provider
