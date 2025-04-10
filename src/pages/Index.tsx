@@ -6,17 +6,34 @@ import Dashboard from './Dashboard';
 import { useNavigate } from 'react-router-dom';
 
 const Index: React.FC = () => {
-  const { isAuthenticated, isLoading, checkAuth } = useAuth();
+  const { isAuthenticated, isLoading, checkAuth, user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     // Check auth status when component mounts
     const verifyAuth = async () => {
-      await checkAuth();
+      const isAuth = await checkAuth();
+      
+      // If authenticated, redirect based on role
+      if (isAuth && user) {
+        switch (user.role) {
+          case 'admin':
+            navigate('/admin/profile');
+            break;
+          case 'trainer':
+            navigate('/trainer/profile');
+            break;
+          case 'member':
+            navigate('/dashboard');
+            break;
+          default:
+            navigate('/dashboard');
+        }
+      }
     };
     
     verifyAuth();
-  }, [checkAuth]);
+  }, [checkAuth, user, navigate]);
 
   if (isLoading) {
     return (

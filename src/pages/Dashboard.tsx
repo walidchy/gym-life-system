@@ -1,14 +1,23 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import MemberDashboard from './dashboard/MemberDashboard';
 import TrainerDashboard from './dashboard/TrainerDashboard';
 import AdminDashboard from './dashboard/AdminDashboard';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import MainLayout from '../components/layout/MainLayout';
 
 const Dashboard: React.FC = () => {
   const { user, isLoading, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // If authenticated and not a member, redirect to the appropriate dashboard
+    if (isAuthenticated && user && user.role !== 'member') {
+      const redirectPath = user.role === 'admin' ? '/admin/profile' : '/trainer/profile';
+      navigate(redirectPath);
+    }
+  }, [user, isAuthenticated, navigate]);
 
   if (isLoading) {
     return (

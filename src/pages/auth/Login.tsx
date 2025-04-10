@@ -54,7 +54,21 @@ const Login: React.FC = () => {
         localStorage.setItem('user', JSON.stringify(response.user));
         setUser(response.user);
         toast.success(response.message || 'Login successful. Welcome back!');
-        navigate('/dashboard');
+        
+        // Redirect based on user role
+        switch (response.user.role) {
+          case 'admin':
+            navigate('/admin/profile');
+            break;
+          case 'trainer':
+            navigate('/trainer/profile');
+            break;
+          case 'member':
+            navigate('/dashboard');
+            break;
+          default:
+            navigate('/dashboard');
+        }
       } else {
         console.error('Invalid response format:', response);
         toast.error('Login failed. Please try again.');

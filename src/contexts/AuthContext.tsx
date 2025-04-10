@@ -23,6 +23,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const location = useLocation();
 
   const checkAuth = async (): Promise<boolean> => {
+    setIsLoading(true);
     const token = localStorage.getItem('auth_token');
     
     if (!token) {
@@ -59,12 +60,51 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     navigate('/login');
   };
 
+  const redirectBasedOnRole = (isAuth: boolean) => {
+    if (!isAuth || !user) return;
+    
+    // Get the base path of the current location to check what section we're in
+    const pathSegments = location.pathname.split('/').filter(Boolean);
+    const currentSection = pathSegments[0] || '';
+    
+    // Define the correct base path for each role
+    const rolePaths = {
+      admin: 'admin',
+      trainer: 'trainer',
+      member: ''
+    };
+    
+    // Check if the user is in a section that doesn't match their role
+    const userRole = user.role as keyof typeof rolePaths;
+    const correctSection = rolePaths[userRole];
+    
+    // If user is on dashboard, profile, or in wrong section, redirect to the correct page
+    if (
+      (location.pathname === '/dashboard' || location.pathname === '/profile') ||
+      (
+        currentSection !== correctSection && 
+        currentSection !== '' && // Allow access to root routes
+        !(correctSection === '' && currentSection === 'activities') && // Allow members to access /activities
+        !(correctSection === '' && currentSection === 'bookings') && // Allow members to access /bookings
+        !(correctSection === '' && currentSection === 'membership') && // Allow members to access /membership
+        !(correctSection === '' && currentSection === 'member')  // Allow members to access /member routes
+      )
+    ) {
+      const redirectPath = userRole === 'member' ? '/dashboard' : `/${userRole}/profile`;
+      navigate(redirectPath);
+    }
+  };
+
   useEffect(() => {
     // Check authentication when the app loads
-    checkAuth();
+    checkAuth().then(isAuth => {
+      if (isAuth && user) {
+        redirectBasedOnRole(true);
+      }
+    });
     
     // Also check auth when navigating between protected routes
-    const protectedRoutes = ['/dashboard', '/profile', '/activities', '/bookings', '/membership'];
+    const protectedRoutes = ['/dashboard', '/profile', '/activities', '/bookings', '/membership', '/member'];
     const adminRoutes = ['/admin', '/admin/members', '/admin/trainers', '/admin/activities', '/admin/memberships', '/admin/equipment', '/admin/profile', '/admin/verifications'];
     const trainerRoutes = ['/trainer', '/trainer/profile', '/trainer/activities', '/trainer/schedule', '/trainer/clients'];
     
@@ -74,6 +114,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       checkAuth().then(isAuth => {
         if (!isAuth && !isLoading) {
           navigate('/login');
+        } else if (isAuth && user) {
+          redirectBasedOnRole(true);
         }
       });
     }
