@@ -32,6 +32,10 @@ export const updateMemberProfile = async (memberData: Partial<Member>): Promise<
   return response.data.data;
 };
 
+export const updateMember = async (): Promise<Membership[]> => {
+  const response = await api.get<ApiResponse<Membership[]>>('/member/memberships');
+  return response.data.data;
+};
 export const getMemberMemberships = async (): Promise<Membership[]> => {
   const response = await api.get<ApiResponse<Membership[]>>('/member/memberships');
   return response.data.data;

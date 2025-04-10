@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Filter, Search } from 'lucide-react';
+import { PlusCircle, Filter, Search, Save, X, Edit, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -26,7 +26,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Activity } from '@/types';
-import { getActivities, deleteActivity } from '@/services/activities';
+import { getActivities, deleteActivity, updateActivity } from '@/services/activities';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 
@@ -37,6 +37,9 @@ const Activities: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [difficultyFilter, setDifficultyFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Activity>>({});
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const itemsPerPage = 5;
 
   const navigate = useNavigate();
@@ -54,7 +57,7 @@ const Activities: React.FC = () => {
 
       const data = await getActivities(queryParams.toString());
       setActivities(data || []);
-      setCurrentPage(1); // Reset to first page when data changes
+      setCurrentPage(1);
     } catch (error) {
       console.error('Error fetching activities:', error);
       toast.error('Failed to load activities');
@@ -75,6 +78,60 @@ const Activities: React.FC = () => {
         toast.error('Failed to delete activity. It may have existing bookings.');
       }
     }
+  };
+
+  const handleEditClick = (activity: Activity) => {
+    setEditingId(activity.id);
+    setEditForm({
+      name: activity.name,
+      category: activity.category,
+      difficulty_level: activity.difficulty_level,
+      duration_minutes: activity.duration_minutes,
+      location: activity.location,
+      equipment_needed: activity.equipment_needed,
+      trainer_id: activity.trainer?.id,
+      description: activity.description
+    });
+  };
+
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      [name]: name === 'duration_minutes' || name === 'trainer_id' ? Number(value) : value
+    }));
+  };
+
+  const handleEquipmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const equipment = e.target.value.split(',').map(item => item.trim());
+    setEditForm(prev => ({
+      ...prev,
+      equipment_needed: equipment
+    }));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+
+    setIsSaving(true);
+    try {
+      const updatedActivity = await updateActivity(editingId, editForm);
+      setActivities(prev => 
+        prev.map(activity => activity.id === editingId ? updatedActivity : activity)
+      );
+      toast.success('Activity updated successfully');
+      setEditingId(null);
+    } catch (error) {
+      console.error('Error updating activity:', error);
+      toast.error('Failed to update activity');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
   };
 
   const filteredActivities = activities.filter(activity => {
@@ -114,6 +171,15 @@ const Activities: React.FC = () => {
       return Array.isArray(parsed) ? parsed.join(', ') : equipment.toString();
     } catch {
       return equipment.toString();
+    }
+  };
+
+  const getDifficultyBadgeVariant = (level: string) => {
+    switch (level.toLowerCase()) {
+      case 'beginner': return 'outline';
+      case 'intermediate': return 'secondary';
+      case 'advanced': return 'destructive';
+      default: return 'outline';
     }
   };
 
@@ -206,43 +272,137 @@ const Activities: React.FC = () => {
                     </TableHeader>
                     <TableBody>
                       {paginatedActivities.map((activity) => (
-                        <TableRow key={activity.id}>
-                          <TableCell className="font-medium">{activity.name}</TableCell>
-                          <TableCell>{activity.category}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={
-                                activity.difficulty_level === 'beginner' ? 'outline' :
-                                activity.difficulty_level === 'intermediate' ? 'secondary' :
-                                'destructive'
-                              }
-                            >
-                              {activity.difficulty_level}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{activity.duration_minutes} min</TableCell>
-                          <TableCell>{activity.location}</TableCell>
-                          <TableCell>{parseEquipment(activity.equipment_needed)}</TableCell>
-                          <TableCell>{activity.trainer?.name || 'No trainer assigned'}</TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/activities/${activity.id}`)}>View</Button>
-                            <Button variant="ghost" size="sm" onClick={() => navigate(`/admin/activities/${activity.id}/edit`)}>Edit</Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-red-500 hover:text-red-700"
-                              onClick={() => handleDeleteActivity(activity.id)}
-                            >
-                              Delete
-                            </Button>
-                          </TableCell>
-                        </TableRow>
+                        <React.Fragment key={activity.id}>
+                          {editingId === activity.id ? (
+                            <TableRow className="bg-accent/50">
+                              <TableCell>
+                                <Input
+                                  name="name"
+                                  value={editForm.name || ''}
+                                  onChange={handleEditFormChange}
+                                  className="w-full"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  name="category"
+                                  value={editForm.category || ''}
+                                  onChange={handleEditFormChange}
+                                  className="w-full"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <select
+                                  name="difficulty_level"
+                                  value={editForm.difficulty_level || ''}
+                                  onChange={handleEditFormChange}
+                                  className="px-3 py-2 border rounded-md text-sm w-full"
+                                >
+                                  <option value="beginner">Beginner</option>
+                                  <option value="intermediate">Intermediate</option>
+                                  <option value="advanced">Advanced</option>
+                                </select>
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  name="duration_minutes"
+                                  type="number"
+                                  value={editForm.duration_minutes || 0}
+                                  onChange={handleEditFormChange}
+                                  className="w-full"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  name="location"
+                                  value={editForm.location || ''}
+                                  onChange={handleEditFormChange}
+                                  className="w-full"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  value={Array.isArray(editForm.equipment_needed) ? 
+                                    editForm.equipment_needed.join(', ') : 
+                                    parseEquipment(editForm.equipment_needed)}
+                                  onChange={handleEquipmentChange}
+                                  className="w-full"
+                                  placeholder="Comma separated equipment"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                {activity.trainer?.name || 'No trainer assigned'}
+                              </TableCell>
+                              <TableCell className="text-right space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleSaveEdit}
+                                  disabled={isSaving}
+                                >
+                                  {isSaving ? (
+                                    <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <Save className="h-4 w-4 mr-1" />
+                                  )}
+                                  Save
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleCancelEdit}
+                                  disabled={isSaving}
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Cancel
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            <TableRow>
+                              <TableCell className="font-medium">{activity.name}</TableCell>
+                              <TableCell>{activity.category}</TableCell>
+                              <TableCell>
+                                <Badge variant={getDifficultyBadgeVariant(activity.difficulty_level)}>
+                                  {activity.difficulty_level}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{activity.duration_minutes} min</TableCell>
+                              <TableCell>{activity.location}</TableCell>
+                              <TableCell>{parseEquipment(activity.equipment_needed)}</TableCell>
+                              <TableCell>{activity.trainer?.name || 'No trainer assigned'}</TableCell>
+                              <TableCell className="text-right space-x-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => navigate(`/admin/activities/${activity.id}`)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditClick(activity)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-red-500 hover:text-red-700"
+                                  onClick={() => handleDeleteActivity(activity.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
                       ))}
                     </TableBody>
                   </Table>
                 </div>
 
-                {/* Pagination Controls */}
                 <div className="flex justify-end items-center mt-4 space-x-2">
                   <Button
                     variant="outline"

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Filter, Search } from 'lucide-react';
+import { PlusCircle, Filter, Search, Save, X, Edit, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { User } from '@/types';
-import { getTrainers, deleteTrainer } from '@/services/trainers';
+import { getTrainers, deleteTrainer, updateTrainer } from '@/services/trainer';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 
@@ -35,6 +35,9 @@ const Trainers: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [specializationFilter, setSpecializationFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<Partial<User>>({});
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const itemsPerPage = 5;
   const navigate = useNavigate();
 
@@ -43,7 +46,7 @@ const Trainers: React.FC = () => {
   }, [specializationFilter]);
 
   useEffect(() => {
-    setCurrentPage(1); // Reset to page 1 when search or filter changes
+    setCurrentPage(1);
   }, [searchQuery, specializationFilter]);
 
   const fetchTrainers = async () => {
@@ -74,6 +77,75 @@ const Trainers: React.FC = () => {
         toast.error('Failed to delete trainer. They may have associated activities.');
       }
     }
+  };
+
+  const handleEditClick = (trainer: User) => {
+    setEditingId(trainer.id);
+    setEditForm({
+      name: trainer.name,
+      email: trainer.email,
+      trainer: {
+        specialization: trainer.trainer?.specialization,
+        experience_years: trainer.trainer?.experience_years,
+        certifications: trainer.trainer?.certifications,
+        phone: trainer.trainer?.phone,
+        bio: trainer.trainer?.bio
+      }
+    });
+  };
+
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleTrainerFieldChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      trainer: {
+        ...prev.trainer,
+        [name]: name === 'experience_years' ? Number(value) : value
+      }
+    }));
+  };
+
+  const handleCertificationsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const certifications = e.target.value.split(',').map(item => item.trim());
+    setEditForm(prev => ({
+      ...prev,
+      trainer: {
+        ...prev.trainer,
+        certifications
+      }
+    }));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+
+    setIsSaving(true);
+    try {
+      const updatedTrainer = await updateTrainer(editingId, editForm);
+      setTrainers(prev => 
+        prev.map(trainer => trainer.id === editingId ? updatedTrainer : trainer)
+      );
+      toast.success('Trainer updated successfully');
+      setEditingId(null);
+    } catch (error) {
+      console.error('Error updating trainer:', error);
+      toast.error('Failed to update trainer');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
   };
 
   const filteredTrainers = trainers.filter(trainer => {
@@ -194,42 +266,127 @@ const Trainers: React.FC = () => {
                     </TableHeader>
                     <TableBody>
                       {paginatedTrainers.map((trainer) => (
-                        <TableRow key={trainer.id}>
-                          <TableCell className="font-medium">{trainer.name}</TableCell>
-                          <TableCell>{trainer.email}</TableCell>
-                          <TableCell>{trainer.trainer?.specialization || '-'}</TableCell>
-                          <TableCell>{trainer.trainer?.experience_years} years</TableCell>
-                          <TableCell>
-                            {trainer.trainer?.certifications ? 
-                              parseCertifications(trainer.trainer.certifications) : '-'}
-                          </TableCell>
-                          <TableCell>{trainer.trainer?.phone || '-'}</TableCell>
-                          <TableCell>{trainer.active_members || 0}</TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => navigate(`/admin/trainers/${trainer.id}`)}
-                            >
-                              View
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => navigate(`/admin/trainers/${trainer.id}/edit`)}
-                            >
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-red-500 hover:text-red-700"
-                              onClick={() => handleDeleteTrainer(trainer.id)}
-                            >
-                              Delete
-                            </Button>
-                          </TableCell>
-                        </TableRow>
+                        <React.Fragment key={trainer.id}>
+                          {editingId === trainer.id ? (
+                            <TableRow className="bg-accent/50">
+                              <TableCell>
+                                <Input
+                                  name="name"
+                                  value={editForm.name || ''}
+                                  onChange={handleEditFormChange}
+                                  className="w-full"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  name="email"
+                                  value={editForm.email || ''}
+                                  onChange={handleEditFormChange}
+                                  className="w-full"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  name="specialization"
+                                  value={editForm.trainer?.specialization || ''}
+                                  onChange={handleTrainerFieldChange}
+                                  className="w-full"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  name="experience_years"
+                                  type="number"
+                                  value={editForm.trainer?.experience_years || 0}
+                                  onChange={handleTrainerFieldChange}
+                                  className="w-full"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  value={Array.isArray(editForm.trainer?.certifications) ? 
+                                    editForm.trainer.certifications.join(', ') : 
+                                    parseCertifications(editForm.trainer?.certifications)}
+                                  onChange={handleCertificationsChange}
+                                  className="w-full"
+                                  placeholder="Comma separated certifications"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  name="phone"
+                                  value={editForm.trainer?.phone || ''}
+                                  onChange={handleTrainerFieldChange}
+                                  className="w-full"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                {trainer.active_members || 0}
+                              </TableCell>
+                              <TableCell className="text-right space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleSaveEdit}
+                                  disabled={isSaving}
+                                >
+                                  {isSaving ? (
+                                    <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <Save className="h-4 w-4 mr-1" />
+                                  )}
+                                  Save
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleCancelEdit}
+                                  disabled={isSaving}
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Cancel
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            <TableRow>
+                              <TableCell className="font-medium">{trainer.name}</TableCell>
+                              <TableCell>{trainer.email}</TableCell>
+                              <TableCell>{trainer.trainer?.specialization || '-'}</TableCell>
+                              <TableCell>{trainer.trainer?.experience_years} years</TableCell>
+                              <TableCell>
+                                {trainer.trainer?.certifications ? 
+                                  parseCertifications(trainer.trainer.certifications) : '-'}
+                              </TableCell>
+                              <TableCell>{trainer.trainer?.phone || '-'}</TableCell>
+                              <TableCell>{trainer.active_members || 0}</TableCell>
+                              <TableCell className="text-right space-x-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => navigate(`/admin/trainers/${trainer.id}`)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => handleEditClick(trainer)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-red-500 hover:text-red-700"
+                                  onClick={() => handleDeleteTrainer(trainer.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
                       ))}
                     </TableBody>
                   </Table>

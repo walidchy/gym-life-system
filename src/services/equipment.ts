@@ -29,3 +29,13 @@ export const deleteEquipment = async (id: number): Promise<void> => {
     throw error;
   }
 };
+
+
+export const updateEquipment = async (id: number): Promise<void> => {
+  try {
+    await api.delete(`/equipment/${id}`);
+  } catch (error) {
+    console.error('Error deleting equipment:', error);
+    throw error;
+  }
+};

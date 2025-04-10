@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Search, AlertTriangle, RefreshCw } from 'lucide-react';
+import { PlusCircle, Search, AlertTriangle, RefreshCw, Save, X, Edit, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -21,7 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
-import { getEquipment, deleteEquipment } from '@/services/equipment';
+import { getEquipment, deleteEquipment, updateEquipment } from '@/services/equipment';
 import { Equipment as EquipmentType } from '@/types';
 
 const Equipment: React.FC = () => {
@@ -31,6 +31,9 @@ const Equipment: React.FC = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<Partial<EquipmentType>>({});
+  const [isSaving, setIsSaving] = useState<boolean>(false);
   const itemsPerPage = 5;
   const navigate = useNavigate();
 
@@ -63,6 +66,49 @@ const Equipment: React.FC = () => {
     }
   };
 
+  const handleEditClick = (item: EquipmentType) => {
+    setEditingId(item.id);
+    setEditForm({
+      name: item.name,
+      category: item.category,
+      quantity: item.quantity,
+      status: item.status,
+      maintenance_date: item.maintenance_date,
+      description: item.description
+    });
+  };
+
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      [name]: name === 'quantity' ? parseInt(value) || 0 : value
+    }));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+
+    setIsSaving(true);
+    try {
+      const updatedEquipment = await updateEquipment(editingId, editForm);
+      setEquipment(prev => 
+        prev.map(item => item.id === editingId ? updatedEquipment : item)
+      );
+      toast.success('Equipment updated successfully');
+      setEditingId(null);
+    } catch (error) {
+      toast.error('Failed to update equipment');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
   const filteredEquipment = equipment.filter(item => {
     const matchesSearch =
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -74,7 +120,6 @@ const Equipment: React.FC = () => {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  // Pagination logic
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredEquipment.slice(indexOfFirstItem, indexOfLastItem);
@@ -233,50 +278,136 @@ const Equipment: React.FC = () => {
                       {currentItems.map((item) => {
                         const status = getStatusBadge(item.status);
                         return (
-                          <TableRow key={item.id}>
-                            <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell>{item.category}</TableCell>
-                            <TableCell>{item.quantity}</TableCell>
-                            <TableCell>
-                              <Badge className={status.className}>{status.label}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              {item.maintenance_date
-                                ? new Date(item.maintenance_date).toLocaleDateString()
-                                : 'N/A'}
-                            </TableCell>
-                            <TableCell className="text-right space-x-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => navigate(`/admin/equipment/${item.id}`)}
-                              >
-                                View
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => navigate(`/admin/equipment/${item.id}/edit`)}
-                              >
-                                Edit
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-red-500 hover:text-red-700"
-                                onClick={() => handleDelete(item.id)}
-                              >
-                                Delete
-                              </Button>
-                            </TableCell>
-                          </TableRow>
+                          <React.Fragment key={item.id}>
+                            {editingId === item.id ? (
+                              <TableRow className="bg-accent/50">
+                                <TableCell>
+                                  <Input
+                                    name="name"
+                                    value={editForm.name || ''}
+                                    onChange={handleEditFormChange}
+                                    className="w-full"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <select
+                                    name="category"
+                                    value={editForm.category || ''}
+                                    onChange={handleEditFormChange}
+                                    className="px-3 py-2 border rounded-md text-sm w-full"
+                                  >
+                                    {getCategories().map(category => (
+                                      <option key={category} value={category}>
+                                        {category}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    name="quantity"
+                                    type="number"
+                                    value={editForm.quantity || 0}
+                                    onChange={handleEditFormChange}
+                                    min="0"
+                                    className="w-full"
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <select
+                                    name="status"
+                                    value={editForm.status || ''}
+                                    onChange={handleEditFormChange}
+                                    className="px-3 py-2 border rounded-md text-sm w-full"
+                                  >
+                                    <option value="available">Available</option>
+                                    <option value="in_use">In Use</option>
+                                    <option value="maintenance">Maintenance</option>
+                                    <option value="retired">Retired</option>
+                                  </select>
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    name="maintenance_date"
+                                    type="date"
+                                    value={editForm.maintenance_date ? 
+                                      new Date(editForm.maintenance_date).toISOString().split('T')[0] : 
+                                      ''}
+                                    onChange={handleEditFormChange}
+                                    className="w-full"
+                                  />
+                                </TableCell>
+                                <TableCell className="text-right space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleSaveEdit}
+                                    disabled={isSaving}
+                                  >
+                                    {isSaving ? (
+                                      <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                                    ) : (
+                                      <Save className="h-4 w-4 mr-1" />
+                                    )}
+                                    Save
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={handleCancelEdit}
+                                    disabled={isSaving}
+                                  >
+                                    <X className="h-4 w-4 mr-1" />
+                                    Cancel
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ) : (
+                              <TableRow>
+                                <TableCell className="font-medium">{item.name}</TableCell>
+                                <TableCell>{item.category}</TableCell>
+                                <TableCell>{item.quantity}</TableCell>
+                                <TableCell>
+                                  <Badge className={status.className}>{status.label}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                  {item.maintenance_date
+                                    ? new Date(item.maintenance_date).toLocaleDateString()
+                                    : 'N/A'}
+                                </TableCell>
+                                <TableCell className="text-right space-x-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => navigate(`/admin/equipment/${item.id}`)}
+                                  >
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEditClick(item)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-red-500 hover:text-red-700"
+                                    onClick={() => handleDelete(item.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            )}
+                          </React.Fragment>
                         );
                       })}
                     </TableBody>
                   </Table>
                 </div>
 
-                {/* Pagination Controls */}
                 <div className="flex justify-center items-center mt-4 gap-4">
                   <Button
                     variant="outline"

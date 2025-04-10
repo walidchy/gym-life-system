@@ -13,7 +13,6 @@ export const getTrainerActivities = async (): Promise<ApiResponse<Activity[]>> =
   }
 };
 
-// Fetch all members
 export const getMembers = async (): Promise<ApiResponse<Member[]>> => {
   try {
     const response = await api.get<ApiResponse<Member[]>>('/members');
@@ -59,6 +58,44 @@ export const deleteActivity = async (activityId: number): Promise<void> => {
     await api.delete(`/activities`);
   } catch (error) {
     console.error('Error deleting activity:', error);
+    throw error;
+  }
+};
+export const getTrainers = async (queryParams?: string): Promise<ApiResponse<User[]>> => {
+  try {
+    const url = `/trainers${queryParams ? `?${queryParams}` : ''}`;
+    const response = await api.get<ApiResponse<{
+      current_page: number;
+      data: User[];
+    }>>(url);
+    
+    // Return the proper data structure
+    return {
+      ...response.data,
+      data: response.data.data.data || []
+    };
+  } catch (error) {
+    console.error('Error fetching trainers:', error);
+    return { data: [], status: "error" };
+  }
+};
+
+export const deleteTrainer = async (userId: number): Promise<void> => {
+  try {
+    await api.delete(`/trainers/${userId}`);
+  } catch (error) {
+    console.error('Error deleting trainer:', error);
+    throw error;
+  }
+};
+
+
+
+export const updateTrainer = async (userId: number): Promise<void> => {
+  try {
+    await api.delete(`/trainers/${userId}`);
+  } catch (error) {
+    console.error('Error deleting trainer:', error);
     throw error;
   }
 };

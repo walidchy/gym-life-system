@@ -73,7 +73,14 @@ export const cancelMembership = async (membershipId: number): Promise<void> => {
     throw error;
   }
 };
-
+export const updateMembership = async (membershipId: number): Promise<void> => {
+  try {
+    await api.put(`/memberships/${membershipId}/cancel`);
+  } catch (error) {
+    console.error('Error canceling membership:', error);
+    throw error;
+  }
+};
 export const createBooking = async ({ membership_plan_id }: { membership_plan_id: number }) => {
   const response = await api.post('/bookings', { membership_plan_id });
   return response.data;

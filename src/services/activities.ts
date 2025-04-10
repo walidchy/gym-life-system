@@ -25,4 +25,22 @@ export const deleteActivity = async (activityId: number): Promise<void> => {
   }
 };
 
-// Keep other functions as needed...
+export const createActivity = async (activityData: Partial<Activity>): Promise<Activity> => {
+  try {
+    const response = await api.post<{ data: Activity }>('/activities', activityData);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error creating activity:', error);
+    throw error;
+  }
+};
+
+export const updateActivity = async (activityData: Partial<Activity>): Promise<Activity> => {
+  try {
+    const response = await api.post<{ data: Activity }>('/activities', activityData);
+    return response.data.data;
+  } catch (error) {
+    console.error('Error creating activity:', error);
+    throw error;
+  }
+};

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Search } from 'lucide-react';
+import { PlusCircle, Search, Save, X, Edit, Trash2, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -22,19 +22,8 @@ import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import MainLayout from '@/components/layout/MainLayout';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getMembers, deleteMember } from '@/services/members';
-import { Member, Membership } from '@/types';
-
-// Define a separate interface for the member's membership which has a different structure
-interface MemberMembership {
-  id: number;
-  name: string;
-  is_active: boolean;
-  end_date: string;
-  membership_plan?: {
-    name: string;
-  };
-}
+import { getMembers, deleteMember, updateMember } from '@/services/members';
+import { Member } from '@/types';
 
 const Members: React.FC = () => {
   const [members, setMembers] = useState<Member[]>([]);
@@ -42,26 +31,30 @@ const Members: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage, setItemsPerPage] = useState<number>(10); // Set items per page
+  const [itemsPerPage] = useState<number>(10);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Member>>({});
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchMembers = async () => {
-      setIsLoading(true);
-      try {
-        const data = await getMembers();
-        setMembers(data);
-      } catch (error) {
-        console.error('Error fetching members:', error);
-        toast.error('Failed to load members');
-        setMembers([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
     fetchMembers();
   }, []);
+
+  const fetchMembers = async () => {
+    setIsLoading(true);
+    try {
+      const data = await getMembers();
+      setMembers(data);
+    } catch (error) {
+      console.error('Error fetching members:', error);
+      toast.error('Failed to load members');
+      setMembers([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleDeleteMember = async (memberId: number) => {
     if (window.confirm('Are you sure you want to delete this member?')) {
@@ -76,25 +69,66 @@ const Members: React.FC = () => {
     }
   };
 
+  const handleEditClick = (member: Member) => {
+    setEditingId(member.id);
+    setEditForm({
+      name: member.name,
+      email: member.email,
+      phone: member.phone,
+      avatar: member.avatar
+    });
+  };
+
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+
+    setIsSaving(true);
+    try {
+      const updatedMember = await updateMember(editingId, editForm);
+      setMembers(prev => 
+        prev.map(member => member.id === editingId ? updatedMember : member)
+      );
+      toast.success('Member updated successfully');
+      setEditingId(null);
+    } catch (error) {
+      console.error('Error updating member:', error);
+      toast.error('Failed to update member');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
+  };
+
   const filteredMembers = members.filter(member => {
     const matchesSearch = 
       member.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       member.email.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const hasActiveMembership = member.memberships?.some(m => m.is_active);
     const matchesStatus = statusFilter === '' || 
       (statusFilter === 'active' && hasActiveMembership) ||
       (statusFilter === 'inactive' && !hasActiveMembership);
-    
+
     return matchesSearch && matchesStatus;
   });
 
-  // Paginate filtered members
   const indexOfLastMember = currentPage * itemsPerPage;
   const indexOfFirstMember = indexOfLastMember - itemsPerPage;
   const currentMembers = filteredMembers.slice(indexOfFirstMember, indexOfLastMember);
 
-  const getLatestMembership = (memberships?: MemberMembership[]) => {
+  const getLatestMembership = (memberships?: any[]) => {
     if (!memberships || memberships.length === 0) return null;
     return [...memberships].sort((a, b) => 
       new Date(b.end_date).getTime() - new Date(a.end_date).getTime()
@@ -138,21 +172,21 @@ const Members: React.FC = () => {
               <div className="flex flex-wrap gap-2">
                 <Button 
                   variant={statusFilter === '' ? 'default' : 'outline'} 
-                  onClick={() => setStatusFilter('')}
+                  onClick={() => setStatusFilter('')} 
                   size="sm"
                 >
                   All
                 </Button>
                 <Button 
                   variant={statusFilter === 'active' ? 'default' : 'outline'} 
-                  onClick={() => setStatusFilter('active')}
+                  onClick={() => setStatusFilter('active')} 
                   size="sm"
                 >
                   Active
                 </Button>
                 <Button 
                   variant={statusFilter === 'inactive' ? 'default' : 'outline'} 
-                  onClick={() => setStatusFilter('inactive')}
+                  onClick={() => setStatusFilter('inactive')} 
                   size="sm"
                 >
                   Inactive
@@ -181,65 +215,124 @@ const Members: React.FC = () => {
                     {currentMembers.map((member) => {
                       const latestMembership = getLatestMembership(member.memberships);
                       return (
-                        <TableRow key={member.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <Avatar>
-                                <AvatarImage src={member.avatar} alt={member.name} />
-                                <AvatarFallback>
-                                  {member.name.substring(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div className="font-medium">{member.name}</div>
-                                <div className="text-sm text-muted-foreground">
-                                  {member.email}
+                        <React.Fragment key={member.id}>
+                          {editingId === member.id ? (
+                            <TableRow className="bg-accent/50">
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <Avatar>
+                                    <AvatarImage src={editForm.avatar} alt={editForm.name} />
+                                    <AvatarFallback>{(editForm.name || '').substring(0, 2).toUpperCase()}</AvatarFallback>
+                                  </Avatar>
+                                  <div className="space-y-2">
+                                    <Input
+                                      name="name"
+                                      value={editForm.name || ''}
+                                      onChange={handleEditFormChange}
+                                      className="w-full"
+                                    />
+                                    <Input
+                                      name="email"
+                                      value={editForm.email || ''}
+                                      onChange={handleEditFormChange}
+                                      className="w-full"
+                                    />
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {latestMembership?.membership_plan?.name || 'No membership'}
-                          </TableCell>
-                          <TableCell>
-                            <Badge 
-                              variant={latestMembership?.is_active ? 'default' : 'secondary'}
-                              className={latestMembership?.is_active ? 
-                                'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}
-                            >
-                              {latestMembership?.is_active ? 'Active' : 'Inactive'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{member.phone || 'Not provided'}</TableCell>
-                          <TableCell>
-                            {latestMembership?.end_date ? 
-                              new Date(latestMembership.end_date).toLocaleDateString() : '-'}
-                          </TableCell>
-                          <TableCell className="text-right space-x-2">
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => navigate(`/admin/members/${member.id}`)}
-                            >
-                              View
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => navigate(`/admin/members/${member.id}/edit`)}
-                            >
-                              Edit
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              className="text-red-500 hover:text-red-700"
-                              onClick={() => handleDeleteMember(member.id)}
-                            >
-                              Delete
-                            </Button>
-                          </TableCell>
-                        </TableRow>
+                              </TableCell>
+                              <TableCell>{latestMembership?.membership_plan?.name || 'No membership'}</TableCell>
+                              <TableCell>
+                                <Badge variant={latestMembership?.is_active ? 'default' : 'secondary'} 
+                                  className={latestMembership?.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                                  {latestMembership?.is_active ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <Input
+                                  name="phone"
+                                  value={editForm.phone || ''}
+                                  onChange={handleEditFormChange}
+                                  className="w-full"
+                                />
+                              </TableCell>
+                              <TableCell>
+                                {latestMembership?.end_date ? new Date(latestMembership.end_date).toLocaleDateString() : '-'}
+                              </TableCell>
+                              <TableCell className="text-right space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleSaveEdit}
+                                  disabled={isSaving}
+                                >
+                                  {isSaving ? (
+                                    <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                                  ) : (
+                                    <Save className="h-4 w-4 mr-1" />
+                                  )}
+                                  Save
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={handleCancelEdit}
+                                  disabled={isSaving}
+                                >
+                                  <X className="h-4 w-4 mr-1" />
+                                  Cancel
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            <TableRow>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <Avatar>
+                                    <AvatarImage src={member.avatar} alt={member.name} />
+                                    <AvatarFallback>{member.name.substring(0, 2).toUpperCase()}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="font-medium">{member.name}</div>
+                                    <div className="text-sm text-muted-foreground">{member.email}</div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>{latestMembership?.membership_plan?.name || 'No membership'}</TableCell>
+                              <TableCell>
+                                <Badge variant={latestMembership?.is_active ? 'default' : 'secondary'} 
+                                  className={latestMembership?.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
+                                  {latestMembership?.is_active ? 'Active' : 'Inactive'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{member.phone || 'Not provided'}</TableCell>
+                              <TableCell>{latestMembership?.end_date ? new Date(latestMembership.end_date).toLocaleDateString() : '-'}</TableCell>
+                              <TableCell className="text-right space-x-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => navigate(`/admin/members/${member.id}`)}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => handleEditClick(member)}
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="text-red-500 hover:text-red-700" 
+                                  onClick={() => handleDeleteMember(member.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </React.Fragment>
                       );
                     })}
                   </TableBody>
@@ -248,17 +341,12 @@ const Members: React.FC = () => {
             ) : (
               <div className="text-center py-10">
                 <p className="text-muted-foreground">No members found.</p>
-                <Button 
-                  variant="outline" 
-                  className="mt-4"
-                  onClick={() => window.location.reload()}
-                >
+                <Button variant="outline" className="mt-4" onClick={fetchMembers}>
                   Refresh List
                 </Button>
               </div>
             )}
-            
-            {/* Pagination Controls */}
+
             <div className="flex justify-center gap-4 mt-4">
               <Button 
                 variant="outline" 
