@@ -31,7 +31,28 @@ export interface User {
     department?: string;
   };
 }
+interface TrainerAvailability {
+  id: number;
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+}
 
+interface WeeklySchedule {
+  [day: string]: {
+    activities: Activity[];
+    availability: TrainerAvailability[];
+  };
+}
+
+interface ScheduleSummary {
+  total_classes: number;
+  busiest_day: string;
+  busiest_day_count: number;
+  total_participants: number;
+  total_capacity: number;
+}
 export interface Member {
   id: number;
   name: string;

@@ -153,7 +153,7 @@ const Register: React.FC = () => {
                     <SelectContent>
                       <SelectItem value="member">Member</SelectItem>
                       <SelectItem value="trainer">Trainer</SelectItem>
-                      <SelectItem value="admin">Administrator</SelectItem>
+                      <SelectItem value="admin">admin</SelectItem>
                     </SelectContent>
                   </Select>
                 </FormControl>

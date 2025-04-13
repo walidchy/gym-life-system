@@ -18,7 +18,14 @@ export const getMembers = async (): Promise<Member[]> => {
   }
 };
 
-export const deleteMember = async (memberId: number): Promise<void> => {
+export const createMember = async (memberId: number): Promise<void> => {
+  try {
+    await api.delete(`/members/${memberId}`);
+  } catch (error) {
+    console.error('Error deleting member:', error);
+    throw error;
+  }
+};export const deleteMember = async (memberId: number): Promise<void> => {
   try {
     await api.delete(`/members/${memberId}`);
   } catch (error) {

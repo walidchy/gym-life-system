@@ -1,6 +1,7 @@
 
 import api from './api';
 import { Activity, User, ApiResponse, Member } from '@/types';
+import axios from 'axios';
 
 // Fetch all trainer activities
 export const getTrainerActivities = async (): Promise<ApiResponse<Activity[]>> => {
@@ -23,15 +24,7 @@ export const getMembers = async (): Promise<ApiResponse<Member[]>> => {
   }
 };
 
-export const getTrainerSchedule = async (): Promise<ApiResponse<any>> => {
-  try {
-    const response = await api.get<ApiResponse<any>>('/trainer/schedule');
-    return response.data;
-  } catch (error) {
-    console.error('Error fetching trainer schedule:', error);
-    return { data: [], status: 'error' };
-  }
-};
+
 
 export const createActivity = async (activityData: Partial<Activity>): Promise<Activity> => {
   try {
@@ -55,7 +48,7 @@ export const updateActivity = async (activityId: number, activityData: Partial<A
 
 export const deleteActivity = async (activityId: number): Promise<void> => {
   try {
-    await api.delete(`/activities`);
+    await api.delete(`/activities/${activityId}`);
   } catch (error) {
     console.error('Error deleting activity:', error);
     throw error;
@@ -98,4 +91,27 @@ export const updateTrainer = async (userId: number): Promise<void> => {
     console.error('Error deleting trainer:', error);
     throw error;
   }
+};
+
+const API_BASE_URL = 'http://localhost:8000/api';
+
+export const getTrainerSchedule = async (weekStart: string) => {
+  const response = await axios.get(`${API_BASE_URL}/schedule`, {
+    params: { week_start: weekStart },
+    headers: {
+      'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+      'Accept': 'application/json'
+    }
+  });
+  return response.data.data;
+};
+
+export const updateTrainerAvailability = async (availability: {
+  day_of_week: string;
+  start_time: string;
+  end_time: string;
+  is_available: boolean;
+}) => {
+  const response = await api.post('/schedule/availability', availability);
+  return response.data.data;
 };

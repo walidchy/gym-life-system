@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { Link } from 'react-router-dom';
-import { Dumbbell, Plus } from 'lucide-react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from 'react-router-dom'; // Added this import
+import { Dumbbell, Plus, Save, X, Edit, Trash2, Eye, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,7 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import MainLayout from '@/components/layout/MainLayout';
-import { getTrainerActivities, deleteActivity } from '@/services/trainer';
+import { getTrainerActivities, deleteActivity, updateActivity } from '@/services/trainer';
 import { Activity as ActivityType } from '@/types';
 import { toast } from 'sonner';
 
@@ -30,10 +30,40 @@ const TrainerActivities: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [activityToDelete, setActivityToDelete] = useState<ActivityType | null>(null);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState<Partial<ActivityType>>({});
+  const queryClient = useQueryClient();
 
-  const { data: activitiesData, isLoading, refetch } = useQuery({
+  const { data: activitiesData, isLoading } = useQuery({
     queryKey: ['trainerActivities'],
     queryFn: () => getTrainerActivities(),
+  });
+
+  const updateActivityMutation = useMutation({
+    mutationFn: (data: { id: number; activity: Partial<ActivityType> }) => 
+      updateActivity(data.id, data.activity),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trainerActivities'] });
+      toast.success('Activity updated successfully');
+      setEditingId(null);
+    },
+    onError: (error) => {
+      toast.error('Failed to update activity');
+      console.error('Error updating activity:', error);
+    }
+  });
+
+  const deleteActivityMutation = useMutation({
+    mutationFn: (id: number) => deleteActivity(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trainerActivities'] });
+      toast.success('Activity deleted successfully');
+      setDeleteDialogOpen(false);
+    },
+    onError: (error) => {
+      toast.error('Failed to delete activity');
+      console.error('Error deleting activity:', error);
+    }
   });
 
   const handleDeleteClick = (activity: ActivityType) => {
@@ -43,16 +73,37 @@ const TrainerActivities: React.FC = () => {
 
   const confirmDelete = async () => {
     if (!activityToDelete) return;
-    
-    try {
-      await deleteActivity(activityToDelete.id);
-      toast.success('Activity deleted successfully');
-      refetch(); // Refresh the activities list
-      setDeleteDialogOpen(false);
-    } catch (error) {
-      toast.error('Failed to delete activity');
-      console.error('Error deleting activity:', error);
-    }
+    deleteActivityMutation.mutate(activityToDelete.id);
+  };
+
+  const handleEditClick = (activity: ActivityType) => {
+    setEditingId(activity.id);
+    setEditForm({
+      name: activity.name,
+      category: activity.category,
+      duration_minutes: activity.duration_minutes,
+      location: activity.location,
+      max_participants: activity.max_participants,
+      description: activity.description
+    });
+  };
+
+  const handleEditFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setEditForm(prev => ({
+      ...prev,
+      [name]: name === 'duration_minutes' || name === 'max_participants' ? Number(value) : value
+    }));
+  };
+
+  const handleSaveEdit = () => {
+    if (!editingId) return;
+    updateActivityMutation.mutate({ id: editingId, activity: editForm });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
   };
 
   const filteredActivities = activitiesData?.activities?.filter((activity) =>
@@ -124,34 +175,112 @@ const TrainerActivities: React.FC = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredActivities.map((activity) => (
-                    <TableRow key={activity.id}>
-                      <TableCell className="font-medium">{activity.name}</TableCell>
-                      <TableCell>{activity.category}</TableCell>
-                      <TableCell>{activity.duration_minutes} min</TableCell>
-                      <TableCell>{activity.location}</TableCell>
-                      <TableCell>{activity.max_participants}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to={`/trainer/activities/${activity.id}`}>
-                              View
-                            </Link>
-                          </Button>
-                          <Button variant="outline" size="sm" asChild>
-                            <Link to={`/trainer/activities/${activity.id}/edit`}>
-                              Edit
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteClick(activity)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
+                    <React.Fragment key={activity.id}>
+                      {editingId === activity.id ? (
+                        <TableRow className="bg-accent/50">
+                          <TableCell>
+                            <Input
+                              name="name"
+                              value={editForm.name || ''}
+                              onChange={handleEditFormChange}
+                              className="w-full"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              name="category"
+                              value={editForm.category || ''}
+                              onChange={handleEditFormChange}
+                              className="w-full"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              name="duration_minutes"
+                              type="number"
+                              value={editForm.duration_minutes || 0}
+                              onChange={handleEditFormChange}
+                              className="w-full"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              name="location"
+                              value={editForm.location || ''}
+                              onChange={handleEditFormChange}
+                              className="w-full"
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <Input
+                              name="max_participants"
+                              type="number"
+                              value={editForm.max_participants || 0}
+                              onChange={handleEditFormChange}
+                              className="w-full"
+                            />
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleSaveEdit}
+                                disabled={updateActivityMutation.isPending}
+                              >
+                                {updateActivityMutation.isPending ? (
+                                  <RefreshCw className="h-4 w-4 mr-1 animate-spin" />
+                                ) : (
+                                  <Save className="h-4 w-4 mr-1" />
+                                )}
+                                Save
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={handleCancelEdit}
+                                disabled={updateActivityMutation.isPending}
+                              >
+                                <X className="h-4 w-4 mr-1" />
+                                Cancel
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        <TableRow>
+                          <TableCell className="font-medium">{activity.name}</TableCell>
+                          <TableCell>{activity.category}</TableCell>
+                          <TableCell>{activity.duration_minutes} min</TableCell>
+                          <TableCell>{activity.location}</TableCell>
+                          <TableCell>{activity.max_participants}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button variant="ghost" size="sm" asChild>
+                                <Link to={`/trainer/activities/${activity.id}`}>
+                                  <Eye className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => handleEditClick(activity)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-500 hover:text-red-700"
+                                onClick={() => handleDeleteClick(activity)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </React.Fragment>
                   ))}
                 </TableBody>
               </Table>
@@ -169,11 +298,19 @@ const TrainerActivities: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleteActivityMutation.isPending}
+            >
               Cancel
             </Button>
-            <Button variant="destructive" onClick={confirmDelete}>
-              Delete
+            <Button 
+              variant="destructive" 
+              onClick={confirmDelete}
+              disabled={deleteActivityMutation.isPending}
+            >
+              {deleteActivityMutation.isPending ? 'Deleting...' : 'Delete'}
             </Button>
           </DialogFooter>
         </DialogContent>

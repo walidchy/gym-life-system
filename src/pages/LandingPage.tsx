@@ -57,7 +57,7 @@ const LandingPage: React.FC = () => {
                 <div className="relative block w-full bg-white rounded-lg overflow-hidden">
                   <img
                     className="w-full"
-                    src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1170&q=80"
+                    src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcS6dzwjUsLpGe1e6M-KhC5RDvH0HiHnGPZFPQ&s"
                     alt="Gym management dashboard"
                   />
                   <div className="absolute inset-0 w-full h-full flex items-center justify-center">
@@ -358,7 +358,7 @@ const LandingPage: React.FC = () => {
                   />
                 </div>
                 <div className="ml-4">
-                  <h4 className="text-lg font-bold">John Smith</h4>
+                  <h4 className="text-lg font-bold">walid</h4>
                   <p className="text-sm text-gray-500">Fitness Center Owner</p>
                 </div>
               </div>
@@ -385,7 +385,7 @@ const LandingPage: React.FC = () => {
                   />
                 </div>
                 <div className="ml-4">
-                  <h4 className="text-lg font-bold">Sarah Johnson</h4>
+                  <h4 className="text-lg font-bold">sarah</h4>
                   <p className="text-sm text-gray-500">Yoga Studio Manager</p>
                 </div>
               </div>
@@ -412,7 +412,7 @@ const LandingPage: React.FC = () => {
                   />
                 </div>
                 <div className="ml-4">
-                  <h4 className="text-lg font-bold">Michael Brown</h4>
+                  <h4 className="text-lg font-bold">ismail</h4>
                   <p className="text-sm text-gray-500">CrossFit Box Owner</p>
                 </div>
               </div>
